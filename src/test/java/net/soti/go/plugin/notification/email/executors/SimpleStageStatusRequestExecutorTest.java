@@ -23,7 +23,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-public class StageStatusRequestExecutorTest {
+public class SimpleStageStatusRequestExecutorTest {
 
     @Test
     public void shouldRenderASuccessResponseIfNotificationWasSent() throws Exception {

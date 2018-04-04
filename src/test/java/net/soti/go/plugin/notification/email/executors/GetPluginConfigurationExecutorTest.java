@@ -68,6 +68,24 @@ public class GetPluginConfigurationExecutorTest {
                 "    \"required\": true,\n" +
                 "    \"secure\": false,\n" +
                 "    \"display-order\": \"3\"\n" +
+                "  },\n" +
+                "  \"ldap_url\": {\n" +
+                "    \"display-name\": \"LDAP URL\",\n" +
+                "    \"required\": true,\n" +
+                "    \"secure\": false,\n" +
+                "    \"display-order\": \"4\"\n" +
+                "  },\n" +
+                "  \"ldap_user\": {\n" +
+                "    \"display-name\": \"LDAP User\",\n" +
+                "    \"required\": true,\n" +
+                "    \"secure\": false,\n" +
+                "    \"display-order\": \"5\"\n" +
+                "  },\n" +
+                "  \"ldap_key\": {\n" +
+                "    \"display-name\": \"LDAP Key\",\n" +
+                "    \"required\": true,\n" +
+                "    \"secure\": false,\n" +
+                "    \"display-order\": \"6\"\n" +
                 "  }\n" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, response.responseBody(), true);

@@ -16,14 +16,15 @@
 
 package net.soti.go.plugin.notification.email.utils;
 
-import net.soti.go.plugin.notification.email.executors.GetViewRequestExecutor;
-import com.google.common.base.Charsets;
-import com.google.common.io.CharStreams;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.Properties;
+
+import net.soti.go.plugin.notification.email.executors.GetViewRequestExecutor;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 
 public class Util {
     public static String readResource(String resourceFile) {

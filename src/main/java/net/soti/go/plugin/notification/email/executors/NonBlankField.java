@@ -19,7 +19,7 @@ package net.soti.go.plugin.notification.email.executors;
 import org.apache.commons.lang3.StringUtils;
 
 public class NonBlankField extends Field {
-    public NonBlankField(String key, String displayName, String defaultValue, Boolean required, Boolean secure, String displayOrder) {
+    public NonBlankField(String key, String displayName, String defaultValue, boolean required, boolean secure, String displayOrder) {
         super(key, displayName, defaultValue, required, secure, displayOrder);
     }
 

@@ -16,11 +16,11 @@
 
 package net.soti.go.plugin.notification.email;
 
+import net.soti.go.plugin.notification.email.executors.GetPluginConfigurationExecutor;
+import net.soti.go.plugin.notification.email.executors.GetViewRequestExecutor;
 import net.soti.go.plugin.notification.email.executors.NotificationInterestedInExecutor;
 import net.soti.go.plugin.notification.email.requests.StageStatusRequest;
 import net.soti.go.plugin.notification.email.requests.ValidatePluginSettings;
-import net.soti.go.plugin.notification.email.executors.GetPluginConfigurationExecutor;
-import net.soti.go.plugin.notification.email.executors.GetViewRequestExecutor;
 
 import com.thoughtworks.go.plugin.api.GoApplicationAccessor;
 import com.thoughtworks.go.plugin.api.GoPlugin;
@@ -32,9 +32,9 @@ import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
 @Extension
-public class ExamplePlugin implements GoPlugin {
+public class EmailNotificationPlugin implements GoPlugin {
 
-    public static final Logger LOG = Logger.getLoggerFor(ExamplePlugin.class);
+    public static final Logger LOG = Logger.getLoggerFor(EmailNotificationPlugin.class);
 
     private GoApplicationAccessor accessor;
     private PluginRequest pluginRequest;
@@ -48,6 +48,7 @@ public class ExamplePlugin implements GoPlugin {
     @Override
     public GoPluginApiResponse handle(GoPluginApiRequest request) throws UnhandledRequestTypeException {
         try {
+            LOG.warn(request.requestName() + " : " + request.requestBody());
             switch (Request.fromString(request.requestName())) {
                 case PLUGIN_SETTINGS_GET_VIEW:
                     return new GetViewRequestExecutor().execute();
@@ -63,6 +64,7 @@ public class ExamplePlugin implements GoPlugin {
                     throw new UnhandledRequestTypeException(request.requestName());
             }
         } catch (Exception e) {
+            LOG.error("Failed!", e);
             throw new RuntimeException(e);
         }
     }

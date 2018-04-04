@@ -43,9 +43,17 @@ public class PluginSettings {
     @SerializedName("api_url")
     private String apiUrl;
 
-    public static PluginSettings fromJSON(String json) {
-        return GSON.fromJson(json, PluginSettings.class);
-    }
+    @Expose
+    @SerializedName("ldap_server_url")
+    private String ldapServerUrl;
+
+    @Expose
+    @SerializedName("ldap_user")
+    private String ldapUser;
+
+    @Expose
+    @SerializedName("ldap_key")
+    private String ldapKey;
 
     public String getApiUser() {
         return apiUser;
@@ -61,5 +69,21 @@ public class PluginSettings {
 
     public String getGoServerUrl() {
         return goServerUrl;
+    }
+
+    public String getLdapServerUrl() {
+        return ldapServerUrl;
+    }
+
+    public String getLdapUser() {
+        return ldapUser;
+    }
+
+    public String getLdapKey() {
+        return ldapKey;
+    }
+
+    static PluginSettings fromJSON(String json) {
+        return GSON.fromJson(json, PluginSettings.class);
     }
 }

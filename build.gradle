@@ -16,23 +16,22 @@
 
 apply plugin: 'java'
 
-group = 'com.example.notification.template'
-version = '0.1-SNAPSHOT'
+group = 'net.soti.go.plugin'
+version = '0.5-SNAPSHOT'
 
 // these values that go into plugin.xml
 project.ext.pluginDesc = [
-    id         : 'com.example.notification.systemout',
+    id         : 'net.soti.go.plugin.notification.email',
     version    : project.version,
-    goCdVersion: '16.2.1',
-    name       : 'Example Notification Plugin that prints to `System.out`',
+    goCdVersion: '17.12.0',
+    name       : 'Notification Plugin that find all changes',
     description: 'Some longer description of your plugin goes here',
-    vendorName : 'Acme Corp',
+    vendorName : 'Soti',
     vendorUrl  : 'https://github.com/user/repository'
 ]
 
-// Force 1.7 compatibility to ensure that it works with older JVMs
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -46,6 +45,8 @@ dependencies {
   compile group: 'com.google.code.gson', name: 'gson', version: '2.6.2'
   compile group: 'com.google.guava', name: 'guava', version: '19.0'
   compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'
+  compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
+  compile group: 'javax.mail', name: 'javax.mail-api', version: '1.5.1'
 
   testCompile group: 'junit', name: 'junit', version: '4.12'
   testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'

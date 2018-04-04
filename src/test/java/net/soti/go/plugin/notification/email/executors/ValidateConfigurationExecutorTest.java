@@ -47,6 +47,18 @@ public class ValidateConfigurationExecutorTest {
                 "  {\n" +
                 "    \"message\": \"API Key must not be blank.\",\n" +
                 "    \"key\": \"api_key\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"message\": \"LDAP URL must not be blank.\",\n" +
+                "    \"key\": \"ldap_url\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"message\": \"LDAP User must not be blank.\",\n" +
+                "    \"key\": \"ldap_user\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"message\": \"LDAP Key must not be blank.\",\n" +
+                "    \"key\": \"ldap_key\"\n" +
                 "  }\n" +
                 "]", response.responseBody(), true);
     }
@@ -58,6 +70,10 @@ public class ValidateConfigurationExecutorTest {
         settings.put("api_user", "bob");
         settings.put("api_key", "p@ssw0rd");
         settings.put("go_server_url", "https://ci.example.com");
+        settings.put("ldap_url", "ldap://api.example.com");
+        settings.put("ldap_user", "bob");
+        settings.put("ldap_key", "p@ssw0rd");
+
         GoPluginApiResponse response = new ValidateConfigurationExecutor(settings).execute();
 
         assertThat(response.responseCode(), is(200));

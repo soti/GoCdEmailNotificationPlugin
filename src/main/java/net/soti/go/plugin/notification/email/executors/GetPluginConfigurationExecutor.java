@@ -32,19 +32,24 @@ public class GetPluginConfigurationExecutor implements RequestExecutor {
 
     private static final Gson GSON = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
-    public static final Field GO_SERVER_URL = new NonBlankField("go_server_url", "Go Server URL", null, true, false, "0");
-    public static final Field API_SERVER_URL = new NonBlankField("api_url", "API URL", null, true, false, "1");
-    public static final Field API_USER = new NonBlankField("api_user", "API User", null, true, false, "2");
-    public static final Field API_KEY = new NonBlankField("api_key", "API Key", null, true, false, "3");
+    private static final Field GO_SERVER_URL = new NonBlankField("go_server_url", "Go Server URL", null, true, false, "0");
+    private static final Field API_SERVER_URL = new NonBlankField("api_url", "API URL", null, true, false, "1");
+    private static final Field API_USER = new NonBlankField("api_user", "API User", null, true, false, "2");
+    private static final Field API_KEY = new NonBlankField("api_key", "API Key", null, true, false, "3");
+    private static final Field LDAP_SERVER_URL = new NonBlankField("ldap_url", "LDAP URL", null, true, false, "4");
+    private static final Field LDAP_USER = new NonBlankField("ldap_user", "LDAP User", null, true, false, "5");
+    private static final Field LDAP_KEY = new NonBlankField("ldap_key", "LDAP Key", null, true, false, "6");
 
-    public static final Map<String, Field> FIELDS = new LinkedHashMap<>();
+    static final Map<String, Field> FIELDS = new LinkedHashMap<>();
 
     static {
         FIELDS.put(GO_SERVER_URL.key(), GO_SERVER_URL);
-
         FIELDS.put(API_SERVER_URL.key(), API_SERVER_URL);
         FIELDS.put(API_USER.key(), API_USER);
         FIELDS.put(API_KEY.key(), API_KEY);
+        FIELDS.put(LDAP_SERVER_URL.key(), LDAP_SERVER_URL);
+        FIELDS.put(LDAP_USER.key(), LDAP_USER);
+        FIELDS.put(LDAP_KEY.key(), LDAP_KEY);
     }
 
     public GoPluginApiResponse execute() {
