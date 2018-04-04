@@ -59,6 +59,14 @@ public class ValidateConfigurationExecutorTest {
                 "  {\n" +
                 "    \"message\": \"LDAP Key must not be blank.\",\n" +
                 "    \"key\": \"ldap_key\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"message\": \"SMTP URL must not be blank.\",\n" +
+                "    \"key\": \"smtp_url\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"message\": \"Mail Sender must not be blank.\",\n" +
+                "    \"key\": \"mail_sender\"\n" +
                 "  }\n" +
                 "]", response.responseBody(), true);
     }
@@ -73,6 +81,8 @@ public class ValidateConfigurationExecutorTest {
         settings.put("ldap_url", "ldap://api.example.com");
         settings.put("ldap_user", "bob");
         settings.put("ldap_key", "p@ssw0rd");
+        settings.put("smtp_url", "http://internalmail.corp.soti.net");
+        settings.put("mail_sender", "test@soti.net");
 
         GoPluginApiResponse response = new ValidateConfigurationExecutor(settings).execute();
 

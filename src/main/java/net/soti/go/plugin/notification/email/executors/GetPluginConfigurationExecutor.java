@@ -39,6 +39,8 @@ public class GetPluginConfigurationExecutor implements RequestExecutor {
     private static final Field LDAP_SERVER_URL = new NonBlankField("ldap_url", "LDAP URL", null, true, false, "4");
     private static final Field LDAP_USER = new NonBlankField("ldap_user", "LDAP User", null, true, false, "5");
     private static final Field LDAP_KEY = new NonBlankField("ldap_key", "LDAP Key", null, true, false, "6");
+    private static final Field SMTP_URL = new NonBlankField("smtp_url", "SMTP URL", null, true, false, "7");
+    private static final Field DEFAILT_SENDER = new NonBlankField("mail_sender", "Mail Sender", null, true, false, "8");
 
     static final Map<String, Field> FIELDS = new LinkedHashMap<>();
 
@@ -50,6 +52,8 @@ public class GetPluginConfigurationExecutor implements RequestExecutor {
         FIELDS.put(LDAP_SERVER_URL.key(), LDAP_SERVER_URL);
         FIELDS.put(LDAP_USER.key(), LDAP_USER);
         FIELDS.put(LDAP_KEY.key(), LDAP_KEY);
+        FIELDS.put(SMTP_URL.key(), SMTP_URL);
+        FIELDS.put(DEFAILT_SENDER.key(), DEFAILT_SENDER);
     }
 
     public GoPluginApiResponse execute() {

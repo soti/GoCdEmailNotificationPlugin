@@ -44,7 +44,7 @@ public class PluginSettings {
     private String apiUrl;
 
     @Expose
-    @SerializedName("ldap_server_url")
+    @SerializedName("ldap_url")
     private String ldapServerUrl;
 
     @Expose
@@ -54,6 +54,14 @@ public class PluginSettings {
     @Expose
     @SerializedName("ldap_key")
     private String ldapKey;
+
+    @Expose
+    @SerializedName("smtp_url")
+    private String smtpUrl;
+
+    @Expose
+    @SerializedName("mail_sender")
+    private String sender;
 
     public String getApiUser() {
         return apiUser;
@@ -81,6 +89,14 @@ public class PluginSettings {
 
     public String getLdapKey() {
         return ldapKey;
+    }
+
+    public String getMailServerUrl() {
+        return smtpUrl;
+    }
+
+    public String getSender() {
+        return sender;
     }
 
     static PluginSettings fromJSON(String json) {

@@ -26,7 +26,6 @@ public class Material {
     private static final String SOTITFS = "SOTITFS";
     private static final String PACKAGE = "Package";
     private static final String REPOSITORY = "Repository";
-    private static final String PIPELINE = "SimplePipeline";
     private static final String URL = "URL";
     private static final String PROJECT_PATH = "ProjectPath";
     private static final String PACKAGE_ENTRY_SPLITTER = " - ";
@@ -35,7 +34,7 @@ public class Material {
     private static final String EQUAL_SPLITTER = "=";
 
     public boolean isPipeline() {
-        return type.equals(PIPELINE);
+        return MaterialType.Pipeline.equals(type);
     }
 
     public String getName() {

@@ -17,17 +17,17 @@
 apply plugin: 'java'
 
 group = 'net.soti.go.plugin'
-version = '0.5-SNAPSHOT'
+version = '0.6-SNAPSHOT'
 
 // these values that go into plugin.xml
 project.ext.pluginDesc = [
     id         : 'net.soti.go.plugin.notification.email',
     version    : project.version,
     goCdVersion: '17.12.0',
-    name       : 'Notification Plugin that find all changes',
-    description: 'Some longer description of your plugin goes here',
+    name       : 'Soti Email Notification plugin pilot',
+    description: 'Notification Plugin that find all changes since last successful run.',
     vendorName : 'Soti',
-    vendorUrl  : 'https://github.com/user/repository'
+    vendorUrl  : 'https://github.com/soti/GoCdEmailNotificationPlugin'
 ]
 
 sourceCompatibility = 1.8

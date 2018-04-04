@@ -86,6 +86,18 @@ public class GetPluginConfigurationExecutorTest {
                 "    \"required\": true,\n" +
                 "    \"secure\": false,\n" +
                 "    \"display-order\": \"6\"\n" +
+                "  },\n" +
+                "  \"smtp_url\": {\n" +
+                "    \"display-name\": \"SMTP URL\",\n" +
+                "    \"required\": true,\n" +
+                "    \"secure\": false,\n" +
+                "    \"display-order\": \"7\"\n" +
+                "  },\n" +
+                "  \"mail_sender\": {\n" +
+                "    \"display-name\": \"Mail Sender\",\n" +
+                "    \"required\": true,\n" +
+                "    \"secure\": false,\n" +
+                "    \"display-order\": \"8\"\n" +
                 "  }\n" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, response.responseBody(), true);

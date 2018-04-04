@@ -68,7 +68,7 @@ public class ChangedMaterial {
     }
 
     public String getName() {
-        return name + " :: " + revision;
+        return name;
     }
 
     public MaterialType getType() {

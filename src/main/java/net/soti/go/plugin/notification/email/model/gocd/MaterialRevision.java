@@ -8,7 +8,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import net.soti.go.plugin.notification.email.model.ChangedMaterial;
-import net.soti.go.plugin.notification.email.model.MaterialType;
 import net.soti.go.plugin.notification.email.utils.GoCdClient;
 import net.soti.go.plugin.notification.email.utils.LdapManager;
 
@@ -33,18 +32,10 @@ public class MaterialRevision {
     @SerializedName("modifications")
     public List<Modification> modifications;
 
-    static private final Pattern PIPELINE_REVISION_PATTERN = Pattern.compile("^([^/]+)/(\\d+)/([^/]+)/(\\d+)$");
+    private static final Pattern PIPELINE_REVISION_PATTERN = Pattern.compile("^([^/]+)/(\\d+)/([^/]+)/(\\d+)$");
     private static final Logger LOG = Logger.getLoggerFor(MaterialRevision.class);
 
     public String modificationUrl(Modification modification) {
-        if ((!material.type.equals(MaterialType.Git) && !material.type.equals(MaterialType.Tfs))
-                || material.description == null || modification.revision == null) {
-            LOG.warn(String.format("Failed to generate changeset URL for modification (%s)/(%s)/(%s)",
-                    material.type, material.description,
-                    modification.revision));
-            return null;
-        }
-
         String url = material.getBaseUrl();
         switch (material.type) {
             case Git:
@@ -53,9 +44,6 @@ public class MaterialRevision {
             case Package:
                 return url;
             default:
-                LOG.warn(String.format("Failed to generate changeset URL for modification (%s)/(%s)/(%s)",
-                        material.type, material.description,
-                        modification.revision));
                 return null;
         }
     }
@@ -67,11 +55,13 @@ public class MaterialRevision {
         }
 
         Matcher matcher = PIPELINE_REVISION_PATTERN.matcher(modifications.get(0).revision);
-        List<Pipeline> pipelines = client.getPipelineHistorySinceLastSuccess(matcher.group(1), matcher.group(2), matcher.group(3));
-
-        for (Pipeline pipeline : pipelines) {
-            result.addAll(pipeline.rootChanges(client, matcher.group(3)));
+        if(!matcher.matches()) {
+            LOG.error("Failed to matching pipeline revision pattern, " + modifications.get(0).revision);
+            return result;
         }
+
+        Pipeline pipeline = client.getPipeline(matcher.group(1), Integer.parseInt(matcher.group(2)));
+        result.addAll(pipeline.subChanges(client));
 
         return result;
     }

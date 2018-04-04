@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 import net.soti.go.plugin.notification.email.utils.GoCdClient;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.thoughtworks.go.plugin.api.logging.Logger;
@@ -36,6 +38,11 @@ public class Pipeline {
 
     private static final Logger LOG = Logger.getLoggerFor(Pipeline.class);
 
+    private static final Gson GSON = new GsonBuilder().
+            excludeFieldsWithoutExposeAnnotation().
+            create();
+    private boolean keepFailing = false;
+
     @Override
     public String toString() {
         if (stages != null && stages.length > 0) {
@@ -45,42 +52,67 @@ public class Pipeline {
         }
     }
 
-    private boolean keepFailing = false;
+    public static Pipeline fromJson(String json) {
+        return GSON.fromJson(json, Pipeline.class);
+    }
+
+    public List<MaterialRevision> rootChanges(GoCdClient client, String stageName) throws IOException {
+        final List<MaterialRevision> result = new ArrayList<>();
+        try {
+            final List<Pipeline> history = client.getPipelineHistorySinceLastSuccess(name, String.valueOf(counter), stageName);
+            if (history.size() > 1) {
+                keepFailing = true;
+            }
+
+            for (Pipeline pipeline : history) {
+                List<MaterialRevision> changes = getChangesInternal(client, pipeline);
+                result.addAll(changes);
+            }
+
+            return result;
+        } catch (Exception e) {
+            LOG.error("Failure in getChanges:", e);
+            throw e;
+        }
+    }
+
+    public List<MaterialRevision> subChanges(GoCdClient client) throws IOException {
+        final List<MaterialRevision> result = new ArrayList<>();
+        try {
+            Pipeline pipeline = client.getPipeline(name, counter);
+            List<MaterialRevision> changes = getChangesInternal(client, pipeline);
+            result.addAll(changes);
+
+            return result;
+        } catch (Exception e) {
+            LOG.error("Failure in getChanges:", e);
+            throw e;
+        }
+    }
 
     public boolean isKeepFailing() {
         return keepFailing;
     }
 
-    public List<MaterialRevision> rootChanges(GoCdClient client, String stageName) throws IOException {
-        final ArrayList result = new ArrayList();
-        try {
-            final List<Pipeline> history = client.getPipelineHistorySinceLastSuccess(name, String.valueOf(counter), stageName);
-            if (history.size() > 1){
-                keepFailing = true;
-            }
+    private List<MaterialRevision> getChangesInternal(GoCdClient client, Pipeline pipeline) {
+        ArrayList result = new ArrayList();
 
-            for (Pipeline pipeline : history) {
-                List<MaterialRevision> revisions = Arrays.stream(pipeline.buildCause.materialRevisions)
-                        .filter(mr -> mr.changed).collect(Collectors.toList());
-                revisions.stream().filter(mr -> !mr.material.isPipeline())
-                        .forEach(result::add);
+        List<MaterialRevision> revisions = Arrays.stream(pipeline.buildCause.materialRevisions)
+                .filter(mr -> mr.changed).collect(Collectors.toList());
+        revisions.stream().filter(mr -> !mr.material.isPipeline())
+                .forEach(result::add);
 
-                revisions.stream().filter(MaterialRevision::isPipeline)
-                        .map(mr -> {
-                            try {
-                                return mr.getRecurseChanges(client);
-                            } catch (IOException e) {
-                                LOG.error("Failed to read recursive change.", e);
-                            }
-                            return new ArrayList<>();
-                        })
-                        .forEach(result::add);
-            }
+        revisions.stream().filter(MaterialRevision::isPipeline)
+                .map(mr -> {
+                    try {
+                        return mr.getRecurseChanges(client);
+                    } catch (IOException e) {
+                        LOG.error("Failed to read recursive change.", e);
+                    }
+                    return new ArrayList();
+                })
+                .forEach(result::addAll);
 
-            return result;
-        } catch (Exception e) {
-            LOG.error("Failure in rootChanges:", e);
-            throw e;
-        }
+        return result;
     }
 }

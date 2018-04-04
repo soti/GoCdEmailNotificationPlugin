@@ -1,6 +1,9 @@
 package net.soti.go.plugin.notification.email.utils;
 
-import javax.mail.*;
+import javax.mail.MessagingException;
+import javax.mail.NoSuchProviderException;
+import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
@@ -11,6 +14,7 @@ import java.util.Properties;
 
 import com.thoughtworks.go.plugin.api.logging.Logger;
 
+import static javax.mail.Message.RecipientType.BCC;
 import static javax.mail.Message.RecipientType.TO;
 
 
@@ -20,24 +24,24 @@ import static javax.mail.Message.RecipientType.TO;
  */
 public class SmtpMailSender {
     private static final Logger LOG = Logger.getLoggerFor(SmtpMailSender.class);
+    private final String smtpHost;
+    private final int port;
+    private final String sender;
+    private final Properties props = new Properties();
 
-    private SmtpMailSender() {
+    public SmtpMailSender(String smtpHost, int port, boolean enableSsl, String sender) {
+        this.smtpHost = smtpHost;
+        this.port = port;
+        this.sender = sender;
 
-    }
-
-    public static void sendEmail(String title, String messageBody, List<String> recepients, String sender) {
-        final String host = "internalmail.corp.soti.net";
-        final int port = 25;
-
-        Properties props = new Properties();
-
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.starttls.enable", String.valueOf(enableSsl).toLowerCase());
+        props.put("mail.smtp.host", smtpHost);
         props.put("mail.smtp.port", port);
         props.put("mail.smtp.timeout", 30 * 1000);
+    }
 
+    public void sendEmail(final String title, final String messageBody, final List<String> recepients, final String cc, final String bcc) {
         Session session = Session.getInstance(props);
-
         List<InternetAddress> receivers = new ArrayList<>();
 
         for (String recepient : recepients) {
@@ -52,16 +56,21 @@ public class SmtpMailSender {
         try {
             MimeMessage message = new MimeMessage(session);
             message.setFrom(new InternetAddress(sender));
-            message.setRecipients(TO, (Address[]) receivers.toArray());
+            message.setRecipients(TO, receivers.toArray(new InternetAddress[0]));
             message.setSubject(title);
-            message.setContent(message, "text/html");
+            message.setContent(messageBody, "text/html; charset=utf-8");
             message.setSentDate(new Date());
-            message.setText(messageBody);
             message.setSender(new InternetAddress(sender));
             message.setReplyTo(InternetAddress.parse(sender));
+            if (cc != null && cc.length() > 0) {
+                message.setRecipients(BCC, InternetAddress.parse(cc));
+            }
+            if (bcc != null && bcc.length() > 0) {
+                message.setRecipients(BCC, InternetAddress.parse(bcc));
+            }
 
             Transport transport = session.getTransport();
-            transport.connect(host, port, null, null);
+            transport.connect(smtpHost, port, null, null);
             transport.sendMessage(message, message.getRecipients(TO));
         } catch (AddressException e) {
             LOG.error("Failed to send mail, Failed to parse address", e);

@@ -48,7 +48,7 @@ public class EmailNotificationPlugin implements GoPlugin {
     @Override
     public GoPluginApiResponse handle(GoPluginApiRequest request) throws UnhandledRequestTypeException {
         try {
-            LOG.warn(request.requestName() + " : " + request.requestBody());
+            LOG.info(request.requestName());
             switch (Request.fromString(request.requestName())) {
                 case PLUGIN_SETTINGS_GET_VIEW:
                     return new GetViewRequestExecutor().execute();

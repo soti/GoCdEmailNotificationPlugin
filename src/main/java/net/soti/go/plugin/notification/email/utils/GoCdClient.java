@@ -27,6 +27,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
  * Date: 2018-04-03
  */
 public class GoCdClient {
+    private final String getPipelinesUrlFormat;
     private final String getPipelineUrlFormat;
     private final String user;
     private final String password;
@@ -34,9 +35,19 @@ public class GoCdClient {
     private static final Logger LOG = Logger.getLoggerFor(GoCdClient.class);
 
     public GoCdClient(String goCdApiUrl, String user, String password) {
-        this.getPipelineUrlFormat = String.format("%s/go/api/pipelines/%s/history/%s", goCdApiUrl, "%s", "%d");
+        this.getPipelinesUrlFormat = String.format("%s/go/api/pipelines/%s/history/%s", goCdApiUrl, "%s", "%d");
+        this.getPipelineUrlFormat = String.format("%s/go/api/pipelines/%s/instance/%s", goCdApiUrl, "%s", "%d");
         this.user = user;
         this.password = password;
+    }
+
+    public Pipeline getPipeline(String pipelineName, int pipelineCounter) throws IOException{
+        String url = String.format(getPipelineUrlFormat, pipelineName, pipelineCounter);
+        HttpResult result = httpGet(url);
+        if (!result.isSuccessResult()) {
+            throw new IOException(String.format("Failed to read history of \"\".", pipelineName));
+        }
+        return Pipeline.fromJson(result.getData());
     }
 
     public List<Pipeline> getPipelineHistorySinceLastSuccess(String pipelineName, String pipelineCounter, String stageName) throws
@@ -44,7 +55,6 @@ public class GoCdClient {
         long offset = 0;
         boolean completed = false;
         ArrayList<Pipeline> history = new ArrayList<>();
-        LOG.warn(String.format("getPipelineHistorySinceLastSuccess %s %s %s", pipelineName, pipelineCounter, stageName));
         do {
             Pipeline[] pipelineHistory = getPipelineHistory(pipelineName, offset);
             final long numberOfPipelines = pipelineHistory.length;
@@ -53,47 +63,50 @@ public class GoCdClient {
 
             Optional<Pipeline> lastPassed = Optional.empty();
             for (Pipeline pipeline : pipelines) {
-                boolean found = false;
                 for (Stage stage : pipeline.stages) {
-                    if (stage.name.equalsIgnoreCase(stageName) && stage.result.equals(StageResultType.Passed)) {
-                        found = true;
+                    if (stageName.equalsIgnoreCase(stage.name) && StageResultType.Passed.equals(stage.result)) {
+                        lastPassed = Optional.of(pipeline);
                         break;
                     }
                 }
 
-                if (found) {
-                    lastPassed = Optional.of(pipeline);
+                if (lastPassed.isPresent()) {
+                    break;
                 }
             }
+
             boolean isLastHistory = pipelines.stream().anyMatch(pipeline -> pipeline.counter == 1);
             if (lastPassed.isPresent()) {
                 final Pipeline last = lastPassed.get();
                 final Pipeline first = Arrays.stream(pipelineHistory).findFirst().get();
-                pipelines = pipelines.stream()
-                        .filter(pipeline
-                                -> {
-                            if (first.counter == last.counter && history.size() == 0) {
-                                return pipeline.counter == first.counter;
-                            }
-                            return pipeline.counter > last.counter;
-                        }).collect(Collectors.toList());
+                List<Pipeline> newPipelines = new ArrayList<>();
+                for (Pipeline pipeline : pipelines){
+                    if (history.size() == 0 && first.counter == last.counter ){
+                        if(pipeline.counter < first.counter){
+                            break;
+                        }
+                    }
+                    if(pipeline.counter <= last.counter){
+                        break;
+                    }
+                    newPipelines.add(pipeline);
+                }
+                pipelines = newPipelines;
                 completed = true;
             } else if (isLastHistory) {
                 completed = true;
             } else {
                 offset += numberOfPipelines;
-                LOG.warn(String.format("getPipelineHistorySinceLastSuccess, go more %d", offset));
             }
 
             history.addAll(pipelines);
         } while (!completed);
 
-        LOG.warn(String.format("getPipelineHistorySinceLastSuccess, return size %d", history.size()));
         return history;
     }
 
     private Pipeline[] getPipelineHistory(String pipelineName, long offset) throws IOException {
-        String url = String.format(getPipelineUrlFormat, pipelineName, offset);
+        String url = String.format(getPipelinesUrlFormat, pipelineName, offset);
         HttpResult result = httpGet(url);
         if (!result.isSuccessResult()) {
             throw new IOException(String.format("Failed to read history of \"\".", pipelineName));
@@ -103,8 +116,6 @@ public class GoCdClient {
     }
 
     private HttpResult httpGet(String url) throws IOException {
-        LOG.warn(String.format("httpGet %s", url));
-
         CloseableHttpClient httpClient = null;
 
         try {
@@ -112,11 +123,10 @@ public class GoCdClient {
             UsernamePasswordCredentials credentials
                     = new UsernamePasswordCredentials(user, password);
             provider.setCredentials(AuthScope.ANY, credentials);
-
             httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
             HttpGet request = new HttpGet(url);
             HttpResponse response = httpClient.execute(request);
-            LOG.warn(String.format("httpGet result %s", response.toString()));
+
             return HttpResult.fromResponse(response);
         } finally {
             closeHttpSilently(httpClient);

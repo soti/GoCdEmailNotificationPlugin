@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import net.soti.go.plugin.notification.email.model.ChangedMaterial;
 import net.soti.go.plugin.notification.email.model.PipelineMaterial;
@@ -49,20 +48,25 @@ public class SimplePipeline {
         return name + "/" + counter + "/" + stage.name + "/" + stage.result;
     }
 
-    public boolean isKeepFailing() {
-        return keepFailing;
-    }
-
-    public List<ChangedMaterial> rootChanges(final GoCdClient client, final LdapManager manager) throws IOException {
-        final List<MaterialRevision> result = new ArrayList<>();
+    public List<ChangedMaterial> getChanges(final GoCdClient client, final LdapManager manager) throws IOException {
+        final List<MaterialRevision> materialRevisions = new ArrayList<>();
         if (stage.result.equals(ResultType.Failed) || stage.result.equals(ResultType.Cancelled)) {
             Pipeline pipeline = new Pipeline();
             pipeline.name = name;
             pipeline.counter = counter;
-            result.addAll(pipeline.rootChanges(client, stage.name));
+            List<MaterialRevision> materialChanges = pipeline.rootChanges(client, stage.name);
+            materialChanges.stream().forEach(mr -> materialRevisions.add(mr));
             keepFailing = pipeline.isKeepFailing();
         }
-        return result.stream().flatMap(mr -> mr.getChangedMaterials(manager).stream()).collect(Collectors.toList());
+
+        List<ChangedMaterial> result = new ArrayList<>();
+        materialRevisions.stream().forEach(mr-> result.addAll(mr.getChangedMaterials(manager)));
+
+        return result;
+    }
+
+    public boolean isStillFailing() {
+        return keepFailing;
     }
 
     public StageStateType getChangedState() {
