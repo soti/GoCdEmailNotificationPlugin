@@ -2,10 +2,7 @@ package net.soti.go.plugin.notification.email.utils;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import net.soti.go.plugin.notification.email.model.PipelineHistory;
@@ -29,6 +26,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
  */
 public class GoCdClient {
     private static final Logger LOG = Logger.getLoggerFor(GoCdClient.class);
+    private static final HashSet<StageResultType> executedTypes = new HashSet<>();
     private final String getPipelinesUrlFormat;
     private final String getPipelineUrlFormat;
     private final String user;
@@ -39,6 +37,34 @@ public class GoCdClient {
         this.getPipelineUrlFormat = String.format("%s/go/api/pipelines/%s/instance/%s", goCdApiUrl, "%s", "%d");
         this.user = user;
         this.password = password;
+        executedTypes.add(StageResultType.Cancelled);
+        executedTypes.add(StageResultType.Failed);
+        executedTypes.add(StageResultType.Passed);
+    }
+
+    public Pipeline getLastRun(String pipelineName, int pipelineCounter, String stageName) throws IOException {
+        long offset = 0;
+        do {
+            Pipeline[] pipelineHistory = getPipeineHistory(pipelineName, offset);
+            final long numberOfPipelines = pipelineHistory.length;
+            offset += numberOfPipelines;
+            Optional<Pipeline> lastRun = Arrays.stream(pipelineHistory)
+                    .filter(pipeline -> pipeline.getCounter() < pipelineCounter)
+                    .filter(pipeline -> pipeline.getStages().stream()
+                            .anyMatch(stage -> stage.getName().equals(stageName) && executedTypes.contains(stage.getResult())))
+                    .findFirst();
+
+            if (lastRun.isPresent()) {
+                return lastRun.get();
+            }
+
+            boolean isLastHistory = Arrays.stream(pipelineHistory).anyMatch(pipeline -> pipeline.getCounter() == 1);
+            if (isLastHistory) {
+                break;
+            }
+        } while (true);
+
+        return null;
     }
 
     public Pipeline getPipeline(String pipelineName, int pipelineCounter) throws IOException {
@@ -50,7 +76,7 @@ public class GoCdClient {
         return Pipeline.fromJson(result.getData());
     }
 
-    public List<Pipeline> getPipelinesBetween(String pipelineName, int startCounter, int endCounter) throws IOException {
+    public List<Pipeline> getPipeineHistory(String pipelineName, int startCounter, int endCounter) throws IOException {
         if (startCounter > endCounter) {
             throw new InvalidParameterException(
                     String.format("Start counter (%d) of pipeline '%s' should be equal to or smaller than end counter (%d).",
@@ -69,7 +95,7 @@ public class GoCdClient {
         long offset = 0;
         ArrayList<Pipeline> history = new ArrayList<>();
         do {
-            Pipeline[] pipelineHistory = getPipelinesBetween(pipelineName, offset);
+            Pipeline[] pipelineHistory = getPipeineHistory(pipelineName, offset);
             Arrays.stream(pipelineHistory)
                     .filter(pipeline -> pipeline.getCounter() <= endCounter && pipeline.getCounter() >= startCounter)
                     .forEach(pipeline -> history.add(pipeline));
@@ -95,7 +121,7 @@ public class GoCdClient {
         boolean completed = false;
         ArrayList<Pipeline> history = new ArrayList<>();
         do {
-            Pipeline[] pipelineHistory = getPipelinesBetween(pipelineName, offset);
+            Pipeline[] pipelineHistory = getPipeineHistory(pipelineName, offset);
             final long numberOfPipelines = pipelineHistory.length;
             List<Pipeline> pipelines = Arrays.stream(pipelineHistory)
                     .filter(pipeline -> pipeline.getCounter() <= pipelineCounter)
@@ -133,7 +159,7 @@ public class GoCdClient {
         return history;
     }
 
-    private Pipeline[] getPipelinesBetween(String pipelineName, long offset) throws IOException {
+    private Pipeline[] getPipeineHistory(String pipelineName, long offset) throws IOException {
         String url = String.format(getPipelinesUrlFormat, pipelineName, offset);
         HttpResult result = httpGet(url);
         if (!result.isSuccessResult()) {

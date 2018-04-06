@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.soti.go.plugin.notification.email.model.ChangedMaterial;
+import net.soti.go.plugin.notification.email.model.MaterialType;
 import net.soti.go.plugin.notification.email.model.PipelineRevision;
 import net.soti.go.plugin.notification.email.model.gocd.ExecutionResultType;
 import net.soti.go.plugin.notification.email.model.gocd.Pipeline;
@@ -54,8 +55,8 @@ public class PluginPipeline {
             case Passed:
                 resultType = ExecutionResultType.Passed;
                 if (counter > 1) {
-                    Pipeline previousPipeline = client.getPipeline(name, counter - 1);
-                    if (!previousPipeline.getStageResult(stage.getName()).equals(StageResultType.Passed)) {
+                    Pipeline lastRunPipeline = client.getLastRun(name, counter, stage.getName());
+                    if(lastRunPipeline != null && !StageResultType.Passed.equals(lastRunPipeline.getStageResult(stage.getName()))){
                         resultType = ExecutionResultType.Fixed;
                     }
                 }
@@ -64,8 +65,8 @@ public class PluginPipeline {
             case Failed:
                 resultType = ExecutionResultType.Broken;
                 if (counter > 1) {
-                    Pipeline previousPipeline = client.getPipeline(name, counter - 1);
-                    if (!previousPipeline.getStageResult(stage.getName()).equals(StageResultType.Passed)) {
+                    Pipeline lastRunPipeline = client.getLastRun(name, counter, stage.getName());
+                    if(lastRunPipeline != null && !StageResultType.Passed.equals(lastRunPipeline.getStageResult(stage.getName()))){
                         resultType = ExecutionResultType.Failing;
                     }
                 }
@@ -130,7 +131,7 @@ public class PluginPipeline {
             }
             firstCounter += 1;
 
-            List<Pipeline> upstreamHistory = client.getPipelinesBetween(entry.getKey(), firstCounter, lastCounter);
+            List<Pipeline> upstreamHistory = client.getPipeineHistory(entry.getKey(), firstCounter, lastCounter);
             changedMaterials.addAll(getChangesOfList(upstreamHistory, everRed, manager));
         }
 
@@ -175,13 +176,13 @@ public class PluginPipeline {
         List<ChangedMaterial> result = new ArrayList<>();
         for (Pipeline pipeline : pipelines) {
             pipeline.getBuildCause().getMaterialRevisions().stream()
-                    .filter(revision -> getAll || revision.isChanged())
+                    .filter(revision -> (getAll || revision.isChanged()) && !MaterialType.Pipeline.equals(revision.getMaterial().getType()))
                     .map(revision -> revision.getChangedMaterials(
                             manager,
                             pipeline.getName(),
                             pipeline.getCounter(),
-                            pipeline.getStages()[0].getName(),
-                            pipeline.getStages()[0].getCounter()))
+                            pipeline.getStages().get(0).getName(),
+                            pipeline.getStages().get(0).getCounter()))
                     .forEach(result::addAll);
         }
 

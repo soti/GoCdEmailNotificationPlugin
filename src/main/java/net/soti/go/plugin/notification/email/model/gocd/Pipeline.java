@@ -36,14 +36,14 @@ public class Pipeline {
     private BuildCause buildCause;
     @Expose
     @SerializedName("stages")
-    private Stage[] stages;
+    private List<Stage> stages;
 
     private List<PipelineRevision> upstreamPipelines = null;
 
     @Override
     public String toString() {
-        if (stages != null && stages.length > 0) {
-            return name + "/" + counter + "/" + stages[0].getName() + "/" + stages[0].getResult();
+        if (stages != null && stages.size() > 0) {
+            return name + "/" + counter + "/" + stages.get(0).getName() + "/" + stages.get(0).getResult();
         } else {
             return name + "/" + counter;
         }
@@ -77,7 +77,7 @@ public class Pipeline {
         return counter;
     }
 
-    public Stage[] getStages() {
+    public List<Stage> getStages() {
         return stages;
     }
 
@@ -97,6 +97,6 @@ public class Pipeline {
     }
 
     private Optional<Stage> findStage(final String stageName) {
-        return Arrays.stream(stages).filter(stage -> stageName.equals(stage.getName())).findFirst();
+        return stages.stream().filter(stage -> stageName.equals(stage.getName())).findFirst();
     }
 }
