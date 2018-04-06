@@ -8,11 +8,11 @@ import com.google.gson.annotations.SerializedName;
  */
 public class GitConfig {
     @SerializedName("branch")
-    public String branch;
+    private String branch;
 
     @SerializedName("url")
-    public String url;
+    private String url;
 
     @SerializedName("shallow-clone")
-    public boolean shallowClone;
+    private boolean shallowClone;
 }

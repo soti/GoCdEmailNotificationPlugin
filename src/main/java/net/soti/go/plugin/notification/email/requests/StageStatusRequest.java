@@ -19,7 +19,7 @@ package net.soti.go.plugin.notification.email.requests;
 import net.soti.go.plugin.notification.email.PluginRequest;
 import net.soti.go.plugin.notification.email.RequestExecutor;
 import net.soti.go.plugin.notification.email.executors.StageStatusRequestExecutor;
-import net.soti.go.plugin.notification.email.model.gocd.plugin.SimplePipeline;
+import net.soti.go.plugin.notification.email.model.gocd.plugin.PluginPipeline;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -27,7 +27,7 @@ import com.google.gson.annotations.Expose;
 
 public class StageStatusRequest {
     @Expose
-    public SimplePipeline pipeline;
+    public PluginPipeline pipeline;
 
     static final Gson GSON = new GsonBuilder()
             .excludeFieldsWithoutExposeAnnotation()

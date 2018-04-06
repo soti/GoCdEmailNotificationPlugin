@@ -10,17 +10,33 @@ import com.google.gson.annotations.SerializedName;
 public class Stage {
     @Expose
     @SerializedName("name")
-    public String name;
+    private String name;
 
     @Expose
     @SerializedName("counter")
-    public int counter;
+    private int counter;
 
     @Expose
     @SerializedName("result")
-    public StageResultType result;
+    private StageResultType result;
 
     @Expose
     @SerializedName("approved_by")
-    public String approvedBy;
+    private String approvedBy;
+
+    public String getName() {
+        return name;
+    }
+
+    public int getCounter() {
+        return counter;
+    }
+
+    public StageResultType getResult() {
+        return result;
+    }
+
+    public String getApprovedBy() {
+        return approvedBy;
+    }
 }

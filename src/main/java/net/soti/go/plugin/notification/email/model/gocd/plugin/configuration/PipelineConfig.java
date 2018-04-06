@@ -8,8 +8,8 @@ import com.google.gson.annotations.SerializedName;
  */
 public class PipelineConfig {
     @SerializedName("pipeline-name")
-    public String pipelineName;
+    private String pipelineName;
 
     @SerializedName("stage-name")
-    public String stageName;
+    private String stageName;
 }

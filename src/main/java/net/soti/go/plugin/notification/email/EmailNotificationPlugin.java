@@ -16,6 +16,8 @@
 
 package net.soti.go.plugin.notification.email;
 
+import java.util.HashMap;
+
 import net.soti.go.plugin.notification.email.executors.GetPluginConfigurationExecutor;
 import net.soti.go.plugin.notification.email.executors.GetViewRequestExecutor;
 import net.soti.go.plugin.notification.email.executors.NotificationInterestedInExecutor;
@@ -33,9 +35,9 @@ import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
 @Extension
 public class EmailNotificationPlugin implements GoPlugin {
+    public static final HashMap<String, String> EMAIL_CACHE = new HashMap<>();
 
-    public static final Logger LOG = Logger.getLoggerFor(EmailNotificationPlugin.class);
-
+    private static final Logger LOG = Logger.getLoggerFor(EmailNotificationPlugin.class);
     private GoApplicationAccessor accessor;
     private PluginRequest pluginRequest;
 

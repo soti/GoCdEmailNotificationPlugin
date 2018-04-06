@@ -20,9 +20,11 @@ import java.util.*;
 
 import net.soti.go.plugin.notification.email.PluginRequest;
 import net.soti.go.plugin.notification.email.RequestExecutor;
+import net.soti.go.plugin.notification.email.ServerRequestFailedException;
 import net.soti.go.plugin.notification.email.model.ChangedMaterial;
 import net.soti.go.plugin.notification.email.model.MaterialType;
-import net.soti.go.plugin.notification.email.model.gocd.plugin.StageStateType;
+import net.soti.go.plugin.notification.email.model.gocd.ExecutionResultType;
+import net.soti.go.plugin.notification.email.model.gocd.StageResultType;
 import net.soti.go.plugin.notification.email.requests.StageStatusRequest;
 import net.soti.go.plugin.notification.email.utils.GoCdClient;
 import net.soti.go.plugin.notification.email.utils.LdapManager;
@@ -64,108 +66,124 @@ public class StageStatusRequestExecutor implements RequestExecutor {
     }
 
     protected void sendNotification() throws Exception {
-        StageStateType stageResult = request.pipeline.getChangedState();
-        LOG.info(String.format("Pipeline status change for %s/%d/%s/%d :: %s", request.pipeline.name, request.pipeline.counter, request
-                .pipeline.stage.name, request.pipeline.stage.counter, stageResult.name()));
-
-        if (stageResult.equals(StageStateType.Failed) || stageResult.equals(StageStateType.Cancelled)) {
-            String pipeline = request.pipeline.name;
-            String stage = request.pipeline.stage.name;
-
-            if (pipeline.toLowerCase().contains("_test") || pipeline.contains("Poc")) {
-                LOG.info(String.format("Ignore %s of pipeline %s (stage: %s)", request.pipeline.getChangedState().name(), pipeline, stage));
-                return;
-            }
-            if (pipeline.startsWith("Database_") && stage.equals("BackwardCompatibilityTest")) {
-                LOG.info(String.format("Ignore %s of pipeline %s (stage: %s)", request.pipeline.getChangedState().name(), pipeline, stage));
-                return;
-            }
-            if (pipeline.startsWith("Acceptance_Aws")) {
-                LOG.info(String.format("Ignore %s of pipeline %s (stage: %s)", request.pipeline.getChangedState().name(), pipeline, stage));
-                return;
-            }
-            if (pipeline.startsWith("Acceptance_FeatureToggle_")) {
-                LOG.info(String.format("Ignore %s of pipeline %s (stage: %s)", request.pipeline.getChangedState().name(), pipeline, stage));
-                return;
-            }
-
-            GoCdClient client = new GoCdClient(
-                    pluginRequest.getPluginSettings().getApiUrl(),
-                    pluginRequest.getPluginSettings().getApiUser(),
-                    pluginRequest.getPluginSettings().getApiKey());
-            LdapManager manager = new LdapManager(
-                    pluginRequest.getPluginSettings().getLdapServerUrl(),
-                    pluginRequest.getPluginSettings().getLdapUser(),
-                    pluginRequest.getPluginSettings().getLdapKey());
-            List<ChangedMaterial> changes = request.pipeline.getChanges(client, manager);
-
-            if (changes.size() == 0) {
-                LOG.info("No new changes since last success");
-                return;
-            }
-
-            HashSet<String> emails = new HashSet();
-            changes.stream()
-                    .map(ChangedMaterial::getEmail)
-                    .filter(email -> email != null && email.length() > 0)
-                    .forEach(emails::add);
-
-            String bodyTemplate = Util.readResource("/mail_body_template.html");
-
-            StringBuilder sb = new StringBuilder();
-            final Hashtable<String, ChangedMaterial> packageChanges = new Hashtable<>();
-
-            HashSet<String> revisions = new HashSet();
-            for (ChangedMaterial change : changes) {
-                if (MaterialType.Package.equals(change.getType())) {
-                    if (!packageChanges.containsKey(change.getName())) {
-                        packageChanges.put(change.getName(), change);
-                    }
-                    continue;
-                }
-
-                if(revisions.contains(change.getRevision()+change.getName())){
-                    continue;
-                }
-
-                revisions.add(change.getRevision()+change.getName());
-
-                String email = change.getEmail();
-                if (email != null && email.length() > 0) {
-                    emails.add(email);
-                }
-                sb.append(getTableBodyString(change));
-            }
-
-            for (ChangedMaterial change : packageChanges.values()){
-                sb.append(getTableBodyString(change));
-            }
-
-            String status = stageResult.equals(StageStateType.Failed) ?
-                    request.pipeline.isStillFailing() ?
-                            "is still failing" : "was failed"
-                    : "was cancelled";
-            String tableBody = sb.toString();
-            String gocdLink = String.format("%s/go/pipelines/%s/%d/%s/%d",
-                    pluginRequest.getPluginSettings().getGoServerUrl(),
-                    pipeline,
-                    request.pipeline.counter,
-                    stage,
-                    request.pipeline.stage.counter);
-
-            String mailBody = String.format(bodyTemplate, pipeline, stage, status, gocdLink, tableBody);
-            String subject = String.format("Alert: GoCD Pipeline %s (stage %s) %s.", pipeline, stage, status);
-            String sender = pluginRequest.getPluginSettings().getSender();
-
-            List<String> emailList = new ArrayList<>();
-            emailList.addAll(emails);
-
-            SmtpMailSender mailSender = new SmtpMailSender(pluginRequest.getPluginSettings().getMailServerUrl(), 25, false, sender);
-            mailSender.sendEmail(subject, mailBody, emailList, null, null);
+        if (StageResultType.Unknown.equals(request.pipeline.getStageResult())) {
+            return;
         }
+
+        String pipelineName = request.pipeline.getName();
+        int pipelineCounter = request.pipeline.getCounter();
+        String stageName = request.pipeline.getStage().getName();
+        int stageCounter = request.pipeline.getStage().getCounter();
+        if (isWhitelisted(pipelineName, stageName)) {
+            LOG.info(String.format("Ignores whitelist: [%s] %s/%d/%s/%d",
+                    request.pipeline.getStageResult().name(),
+                    pipelineName,
+                    pipelineCounter,
+                    stageName,
+                    stageCounter));
+            return;
+        }
+
+        GoCdClient client = new GoCdClient(
+                pluginRequest.getPluginSettings().getApiUrl(),
+                pluginRequest.getPluginSettings().getApiUser(),
+                pluginRequest.getPluginSettings().getApiKey());
+        LdapManager manager = new LdapManager(
+                pluginRequest.getPluginSettings().getLdapServerUrl(),
+                pluginRequest.getPluginSettings().getLdapUser(),
+                pluginRequest.getPluginSettings().getLdapKey());
+
+        request.pipeline.initialize(client, manager);
+
+        ExecutionResultType executionResult = request.pipeline.getExecutionResultType();
+        if (ExecutionResultType.Passed.equals(executionResult) || ExecutionResultType.Building.equals(executionResult)) {
+            return;
+        }
+
+        List<ChangedMaterial> changes = request.pipeline.getAllChangedMaterials();
+        if (changes.size() == 0) {
+            LOG.info("No new changes since last success");
+            return;
+        }
+
+        HashSet<String> emails = new HashSet<>();
+        changes.stream().map(ChangedMaterial::getEmail)
+                .filter(email -> email != null && email.length() > 0)
+                .forEach(emails::add);
+
+        String bodyTemplate = Util.readResource("/mail_body_template.html");
+
+        StringBuilder sb = new StringBuilder();
+        final HashMap<String, ChangedMaterial> packageChanges = new HashMap<>();
+        final HashSet<String> usedRevisions = new HashSet<>();
+        final List<String> tableBodies = new ArrayList<>();
+
+        for (int i = changes.size() - 1; i >= 0; i--) {
+            ChangedMaterial change = changes.get(i);
+            if (MaterialType.Package.equals(change.getType())) {
+                packageChanges.put(change.getName(), change);
+                continue;
+            }
+            String key = change.getType().name() + change.getRevision() + change.getName() + change.getPipelineName();
+            if (usedRevisions.contains(key)) {
+                continue;
+            }
+
+            usedRevisions.add(key);
+            String email = change.getEmail();
+            if (email != null && email.length() > 0) {
+                emails.add(email);
+            }
+            tableBodies.add(getTableBodyString(change));
+        }
+
+        for (String body : tableBodies) {
+            sb.append(body);
+        }
+        for (ChangedMaterial change : packageChanges.values()) {
+            sb.append(getTableBodyString(change));
+        }
+
+        String tableBody = sb.toString();
+        String statusMessage;
+        switch (executionResult) {
+            case Broken:
+                statusMessage = "was broken";
+                break;
+            case Failing:
+                statusMessage = "is still failing";
+                break;
+            case Fixed:
+                statusMessage = "has been fixed";
+                break;
+            default:
+                statusMessage = "passed";
+        }
+
+        String gocdLink = String.format("%s/go/pipelines/%s/%d/%s/%d",
+                pluginRequest.getPluginSettings().getGoServerUrl(),
+                pipelineName,
+                pipelineCounter,
+                stageName,
+                stageCounter);
+
+        String mailBody = String.format(bodyTemplate, pipelineName, stageName, statusMessage, gocdLink, tableBody);
+        String subject = String.format("[%s] GoCD pipeline %s (stage %s) %s", executionResult.name(), pipelineName, stageName, statusMessage);
+        String sender = pluginRequest.getPluginSettings().getSender();
+
+        List<String> emailList = new ArrayList<>();
+        emailList.addAll(emails);
+
+        SmtpMailSender mailSender = new SmtpMailSender(pluginRequest.getPluginSettings().getMailServerUrl(), 25, false, sender);
+        mailSender.sendEmail(subject, mailBody, emailList, null, null);
+
     }
 
-    private String getTableBodyString(ChangedMaterial change){
+    private boolean isWhitelisted(String pipelineName, String stageName) {
+        return false;
+    }
+
+    private String getTableBodyString(ChangedMaterial change) throws ServerRequestFailedException {
         StringBuilder sb = new StringBuilder();
         MaterialType type = change.getType();
         String repo = change.getName();
@@ -188,11 +206,19 @@ public class StageStatusRequestExecutor implements RequestExecutor {
         sb.append("</td>");
 
         sb.append("<td>");
-        sb.append(type.name());
+        String linkUrl = String.format("%s/go/pipelines/%s/%d/%s/%d",
+                pluginRequest.getPluginSettings().getGoServerUrl(),
+                change.getPipelineName(),
+                change.getPipelineCounter(),
+                change.getStageName(),
+                change.getStageCounter());
+
+        sb.append(String.format("<a href=\"%s\">%s<br/>[%d]</a>", linkUrl, change.getPipelineName(), change.getPipelineCounter()));
         sb.append("</td>");
 
         sb.append("<td>");
-        sb.append(String.format("<a href=\"%s\">%s in %s</a>", link, revision, repo));
+        sb.append(String.format("%s: <a href=\"%s\">%s<br/>At %s</a>", type.name(), link, revision, MaterialType.Package.equals(type) ? link
+                : repo));
         sb.append("</td>");
 
         sb.append("<td>");

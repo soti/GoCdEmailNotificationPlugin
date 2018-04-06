@@ -19,7 +19,7 @@ package net.soti.go.plugin.notification.email.requests;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-public class SimpleStageStatusRequestTest {
+public class PluginStageStatusRequestTest {
 
     @Test
     public void shouldDeserializeFromJSONWithoutLoosingAnyData() throws Exception {

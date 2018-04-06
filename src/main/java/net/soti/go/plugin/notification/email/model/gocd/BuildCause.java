@@ -1,5 +1,7 @@
 package net.soti.go.plugin.notification.email.model.gocd;
 
+import java.util.List;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -10,9 +12,26 @@ import com.google.gson.annotations.SerializedName;
 public class BuildCause {
     @Expose
     @SerializedName("approver")
-    public String approver;
+    private String approver;
 
     @Expose
     @SerializedName("material_revisions")
-    public MaterialRevision[] materialRevisions;
+    private List<MaterialRevision> materialRevisions;
+
+    public BuildCause() {
+
+    }
+
+    public BuildCause(String approver, List<MaterialRevision> materialRevisions){
+        this.approver = approver;
+        this.materialRevisions = materialRevisions;
+    }
+
+    public List<MaterialRevision> getMaterialRevisions() {
+        return materialRevisions;
+    }
+
+    public String getApprover() {
+        return approver;
+    }
 }

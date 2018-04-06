@@ -8,11 +8,11 @@ import com.google.gson.annotations.SerializedName;
  */
 public class PackageConfig {
     @SerializedName("REPO_ID")
-    public String repoId;
+    private String repoId;
 
     @SerializedName("PACKAGE_PATH")
-    public String packagePath;
+    private String packagePath;
 
     @SerializedName("PACKAGE_ID")
-    public String packageId;
+    private String packageId;
 }

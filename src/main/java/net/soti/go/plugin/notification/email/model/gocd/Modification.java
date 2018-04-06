@@ -10,7 +10,7 @@ import com.google.gson.annotations.SerializedName;
 public class Modification {
     @Expose
     @SerializedName("revision")
-    public String revision;
+    private String revision;
 
     @Expose
     @SerializedName("user_name")
@@ -23,4 +23,20 @@ public class Modification {
     @Expose
     @SerializedName("email_address")
     public String email;
+
+    public String getRevision() {
+        return revision;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public String getEmail() {
+        return email;
+    }
 }

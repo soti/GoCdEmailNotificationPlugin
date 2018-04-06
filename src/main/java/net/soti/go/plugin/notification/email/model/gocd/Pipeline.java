@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import net.soti.go.plugin.notification.email.model.MaterialType;
+import net.soti.go.plugin.notification.email.model.PipelineRevision;
 import net.soti.go.plugin.notification.email.utils.GoCdClient;
 
 import com.google.gson.Gson;
@@ -20,33 +23,27 @@ import com.thoughtworks.go.plugin.api.logging.Logger;
  * Date: 2018-03-18
  */
 public class Pipeline {
+    private static final Logger LOG = Logger.getLoggerFor(Pipeline.class);
+    private static final Gson GSON = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
     @Expose
     @SerializedName("name")
-    public String name;
-
+    private String name;
     @Expose
     @SerializedName("counter")
-    public int counter;
-
+    private int counter;
     @Expose
     @SerializedName("build_cause")
-    public BuildCause buildCause;
-
+    private BuildCause buildCause;
     @Expose
     @SerializedName("stages")
-    public Stage[] stages;
+    private Stage[] stages;
 
-    private static final Logger LOG = Logger.getLoggerFor(Pipeline.class);
-
-    private static final Gson GSON = new GsonBuilder().
-            excludeFieldsWithoutExposeAnnotation().
-            create();
-    private boolean keepFailing = false;
+    private List<PipelineRevision> upstreamPipelines = null;
 
     @Override
     public String toString() {
         if (stages != null && stages.length > 0) {
-            return name + "/" + counter + "/" + stages[0].name + "/" + stages[0].result;
+            return name + "/" + counter + "/" + stages[0].getName() + "/" + stages[0].getResult();
         } else {
             return name + "/" + counter;
         }
@@ -56,63 +53,50 @@ public class Pipeline {
         return GSON.fromJson(json, Pipeline.class);
     }
 
-    public List<MaterialRevision> rootChanges(GoCdClient client, String stageName) throws IOException {
-        final List<MaterialRevision> result = new ArrayList<>();
-        try {
-            final List<Pipeline> history = client.getPipelineHistorySinceLastSuccess(name, String.valueOf(counter), stageName);
-            if (history.size() > 1) {
-                keepFailing = true;
-            }
+    public StageResultType getStageResult(final String stageName) {
+        return findStage(stageName).get().getResult();
+    }
 
-            for (Pipeline pipeline : history) {
-                List<MaterialRevision> changes = getChangesInternal(client, pipeline);
-                result.addAll(changes);
-            }
+    public List<PipelineRevision> getRecursiveUpstreamPipelines(final GoCdClient client) throws IOException {
+        List<PipelineRevision> result = new ArrayList<>();
 
-            return result;
-        } catch (Exception e) {
-            LOG.error("Failure in getChanges:", e);
-            throw e;
+        List<PipelineRevision> currentUpstreams = getUpstreamPipelines();
+        result.addAll(getUpstreamPipelines());
+        for (PipelineRevision revision : currentUpstreams) {
+            Pipeline pipeline = client.getPipeline(revision.getPipelineName(), revision.getPipelineCounter());
+            result.addAll(pipeline.getRecursiveUpstreamPipelines(client));
         }
-    }
-
-    public List<MaterialRevision> subChanges(GoCdClient client) throws IOException {
-        final List<MaterialRevision> result = new ArrayList<>();
-        try {
-            Pipeline pipeline = client.getPipeline(name, counter);
-            List<MaterialRevision> changes = getChangesInternal(client, pipeline);
-            result.addAll(changes);
-
-            return result;
-        } catch (Exception e) {
-            LOG.error("Failure in getChanges:", e);
-            throw e;
-        }
-    }
-
-    public boolean isKeepFailing() {
-        return keepFailing;
-    }
-
-    private List<MaterialRevision> getChangesInternal(GoCdClient client, Pipeline pipeline) {
-        ArrayList result = new ArrayList();
-
-        List<MaterialRevision> revisions = Arrays.stream(pipeline.buildCause.materialRevisions)
-                .filter(mr -> mr.changed).collect(Collectors.toList());
-        revisions.stream().filter(mr -> !mr.material.isPipeline())
-                .forEach(result::add);
-
-        revisions.stream().filter(MaterialRevision::isPipeline)
-                .map(mr -> {
-                    try {
-                        return mr.getRecurseChanges(client);
-                    } catch (IOException e) {
-                        LOG.error("Failed to read recursive change.", e);
-                    }
-                    return new ArrayList();
-                })
-                .forEach(result::addAll);
-
         return result;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getCounter() {
+        return counter;
+    }
+
+    public Stage[] getStages() {
+        return stages;
+    }
+
+    public BuildCause getBuildCause() {
+        return buildCause;
+    }
+
+    private List<PipelineRevision> getUpstreamPipelines() {
+        if (upstreamPipelines == null) {
+            upstreamPipelines = buildCause.getMaterialRevisions().stream()
+                    .filter(revision -> MaterialType.Pipeline.equals(revision.getMaterial().getType()))
+                    .flatMap(revision -> revision.getModifications().stream())
+                    .map(modification -> PipelineRevision.parseRevision(modification.getRevision()))
+                    .collect(Collectors.toList());
+        }
+        return upstreamPipelines;
+    }
+
+    private Optional<Stage> findStage(final String stageName) {
+        return Arrays.stream(stages).filter(stage -> stageName.equals(stage.getName())).findFirst();
     }
 }

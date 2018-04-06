@@ -1,6 +1,7 @@
 package net.soti.go.plugin.notification.email.utils;
 
 import java.io.IOException;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,12 +28,11 @@ import org.apache.http.impl.client.HttpClientBuilder;
  * Date: 2018-04-03
  */
 public class GoCdClient {
+    private static final Logger LOG = Logger.getLoggerFor(GoCdClient.class);
     private final String getPipelinesUrlFormat;
     private final String getPipelineUrlFormat;
     private final String user;
     private final String password;
-
-    private static final Logger LOG = Logger.getLoggerFor(GoCdClient.class);
 
     public GoCdClient(String goCdApiUrl, String user, String password) {
         this.getPipelinesUrlFormat = String.format("%s/go/api/pipelines/%s/history/%s", goCdApiUrl, "%s", "%d");
@@ -41,7 +41,7 @@ public class GoCdClient {
         this.password = password;
     }
 
-    public Pipeline getPipeline(String pipelineName, int pipelineCounter) throws IOException{
+    public Pipeline getPipeline(String pipelineName, int pipelineCounter) throws IOException {
         String url = String.format(getPipelineUrlFormat, pipelineName, pipelineCounter);
         HttpResult result = httpGet(url);
         if (!result.isSuccessResult()) {
@@ -50,48 +50,76 @@ public class GoCdClient {
         return Pipeline.fromJson(result.getData());
     }
 
-    public List<Pipeline> getPipelineHistorySinceLastSuccess(String pipelineName, String pipelineCounter, String stageName) throws
+    public List<Pipeline> getPipelinesBetween(String pipelineName, int startCounter, int endCounter) throws IOException {
+        if (startCounter > endCounter) {
+            throw new InvalidParameterException(
+                    String.format("Start counter (%d) of pipeline '%s' should be equal to or smaller than end counter (%d).",
+                            startCounter,
+                            pipelineName,
+                            endCounter));
+        }
+
+        if (startCounter < 1) {
+            throw new InvalidParameterException(
+                    String.format("Start counter (%d) of pipeline '%s' should be bigger than 0.",
+                            startCounter,
+                            pipelineName));
+        }
+
+        long offset = 0;
+        ArrayList<Pipeline> history = new ArrayList<>();
+        do {
+            Pipeline[] pipelineHistory = getPipelinesBetween(pipelineName, offset);
+            Arrays.stream(pipelineHistory)
+                    .filter(pipeline -> pipeline.getCounter() <= endCounter && pipeline.getCounter() >= startCounter)
+                    .forEach(pipeline -> history.add(pipeline));
+
+            if (history.size() == 0) {
+                continue;
+            }
+            if (history.get(history.size() - 1).getCounter() == startCounter ||
+                    pipelineHistory.length == 0 ||
+                    pipelineHistory[pipelineHistory.length - 1].getCounter() == 1) {
+                break;
+            }
+
+            offset += pipelineHistory.length;
+        } while (true);
+
+        return history;
+    }
+
+    public List<Pipeline> getPipelineHistorySinceLastSuccess(String pipelineName, int pipelineCounter, final String stageName) throws
             IOException {
         long offset = 0;
         boolean completed = false;
         ArrayList<Pipeline> history = new ArrayList<>();
         do {
-            Pipeline[] pipelineHistory = getPipelineHistory(pipelineName, offset);
+            Pipeline[] pipelineHistory = getPipelinesBetween(pipelineName, offset);
             final long numberOfPipelines = pipelineHistory.length;
-            List<Pipeline> pipelines = Arrays.stream(pipelineHistory).filter(pipeline -> pipeline.counter <= Integer.parseInt
-                    (pipelineCounter)).collect(Collectors.toList());
+            List<Pipeline> pipelines = Arrays.stream(pipelineHistory)
+                    .filter(pipeline -> pipeline.getCounter() <= pipelineCounter)
+                    .collect(Collectors.toList());
 
             Optional<Pipeline> lastPassed = Optional.empty();
             for (Pipeline pipeline : pipelines) {
-                for (Stage stage : pipeline.stages) {
-                    if (stageName.equalsIgnoreCase(stage.name) && StageResultType.Passed.equals(stage.result)) {
+                for (Stage stage : pipeline.getStages()) {
+                    if (stageName.equalsIgnoreCase(stage.getName()) && StageResultType.Passed.equals(stage.getResult())) {
                         lastPassed = Optional.of(pipeline);
                         break;
                     }
                 }
-
                 if (lastPassed.isPresent()) {
                     break;
                 }
             }
 
-            boolean isLastHistory = pipelines.stream().anyMatch(pipeline -> pipeline.counter == 1);
+            boolean isLastHistory = pipelines.stream().anyMatch(pipeline -> pipeline.getCounter() == 1);
             if (lastPassed.isPresent()) {
                 final Pipeline last = lastPassed.get();
-                final Pipeline first = Arrays.stream(pipelineHistory).findFirst().get();
-                List<Pipeline> newPipelines = new ArrayList<>();
-                for (Pipeline pipeline : pipelines){
-                    if (history.size() == 0 && first.counter == last.counter ){
-                        if(pipeline.counter < first.counter){
-                            break;
-                        }
-                    }
-                    if(pipeline.counter <= last.counter){
-                        break;
-                    }
-                    newPipelines.add(pipeline);
-                }
-                pipelines = newPipelines;
+                pipelines = pipelines.stream()
+                        .filter(pipeline -> pipeline.getCounter() >= last.getCounter())
+                        .collect(Collectors.toList());
                 completed = true;
             } else if (isLastHistory) {
                 completed = true;
@@ -105,7 +133,7 @@ public class GoCdClient {
         return history;
     }
 
-    private Pipeline[] getPipelineHistory(String pipelineName, long offset) throws IOException {
+    private Pipeline[] getPipelinesBetween(String pipelineName, long offset) throws IOException {
         String url = String.format(getPipelinesUrlFormat, pipelineName, offset);
         HttpResult result = httpGet(url);
         if (!result.isSuccessResult()) {

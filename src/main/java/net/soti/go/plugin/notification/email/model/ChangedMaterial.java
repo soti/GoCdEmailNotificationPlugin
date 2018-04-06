@@ -20,6 +20,10 @@ public class ChangedMaterial {
     private final String name;
     private final String revision;
     private final String comment;
+    private final String pipelineName;
+    private final int pipelineCounter;
+    private final String stageName;
+    private final int stageCounter;
 
     public ChangedMaterial(
             String user,
@@ -29,12 +33,20 @@ public class ChangedMaterial {
             String name,
             String revision,
             String comment,
-            LdapManager manager) {
+            LdapManager manager,
+            String pipelineName,
+            int pipelineCounter,
+            String stageName,
+            int stageCounter) {
         this.link = link;
         this.materialType = materialType;
         this.name = name;
         this.revision = revision;
         this.comment = comment;
+        this.pipelineName = pipelineName;
+        this.pipelineCounter = pipelineCounter;
+        this.stageName = stageName;
+        this.stageCounter = stageCounter;
 
         if (email != null && email.length() > 0) {
             this.email = email;
@@ -47,7 +59,7 @@ public class ChangedMaterial {
                 this.email = gitMatcher.group(2);
             } else if (tfsMatcher.matches()) {
                 this.user = tfsMatcher.group(2);
-                this.email = manager.findAccountByAccountName(this.user);
+                this.email = manager.findEmailByAccountName(this.user);
             } else {
                 this.user = user;
                 this.email = "";
@@ -81,5 +93,19 @@ public class ChangedMaterial {
 
     public String getComment() {
         return comment;
+    }
+
+    public String getPipelineName(){
+        return pipelineName;
+    }
+
+    public int getPipelineCounter() {
+        return pipelineCounter;
+    }
+
+    public String getStageName() {return stageName;}
+
+    public int getStageCounter() {
+        return stageCounter;
     }
 }

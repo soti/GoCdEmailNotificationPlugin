@@ -1,5 +1,7 @@
 package net.soti.go.plugin.notification.email.model.gocd.plugin;
 
+import net.soti.go.plugin.notification.email.model.gocd.StageResultType;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -7,15 +9,20 @@ import com.google.gson.annotations.SerializedName;
  * User: wsim
  * Date: 2018-04-03
  */
-public class SimpleStage {
+public class PluginStage {
     @Expose
     @SerializedName("name")
-    public String name;
+    private String name;
 
     @Expose
     @SerializedName("counter")
-    public int counter;
+    private int counter;
 
+    @Expose
+    @SerializedName("result")
+    private StageResultType result;
+
+    /*
     @Expose
     @SerializedName("approval-type")
     public String approvalType;
@@ -23,17 +30,17 @@ public class SimpleStage {
     @Expose
     @SerializedName("approved-by")
     public String approvedBy;
+    */
 
-    @Expose
-    @SerializedName("state")
-    public StageStateType state;
+    public String getName(){
+        return name;
+    }
 
-    @Expose
-    @SerializedName("result")
-    public ResultType result;
+    public int getCounter(){
+        return counter;
+    }
 
-    @Expose
-    @SerializedName("jobs")
-    public Job[] jobs;
-
+    public StageResultType getResult() {
+        return result;
+    }
 }

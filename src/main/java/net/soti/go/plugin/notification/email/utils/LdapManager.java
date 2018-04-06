@@ -2,14 +2,16 @@ package net.soti.go.plugin.notification.email.utils;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
+import java.util.HashMap;
 import java.util.Hashtable;
+
+import net.soti.go.plugin.notification.email.EmailNotificationPlugin;
 
 import com.thoughtworks.go.plugin.api.logging.Logger;
 
@@ -19,8 +21,6 @@ import com.thoughtworks.go.plugin.api.logging.Logger;
  */
 public class LdapManager {
     private static final Logger LOG = Logger.getLoggerFor(LdapManager.class);
-
-    private final String ldapSearchBase = "DC=corp,DC=soti,DC=net";
     private final Hashtable<String, Object> env = new Hashtable<>();
 
     public LdapManager(String ldapAdServer, String ldapUser, String ldapPassword) {
@@ -35,14 +35,26 @@ public class LdapManager {
         env.put(Context.PROVIDER_URL, ldapAdServer);
     }
 
+    public synchronized String findEmailByAccountName(String accountName) {
+        if (!EmailNotificationPlugin.EMAIL_CACHE.containsKey(accountName)) {
+            String email = findEmailInternal(accountName);
+            if (email != null && email.length() > 0) {
+                EmailNotificationPlugin.EMAIL_CACHE.put(accountName, email);
+            } else {
+                return "";
+            }
+        }
 
-    public String findAccountByAccountName(String accountName) {
+        return EmailNotificationPlugin.EMAIL_CACHE.get(accountName);
+    }
+
+    private String findEmailInternal(String accountName) {
         try {
             LdapContext ctx = new InitialLdapContext(env, null);
             String searchFilter = "(&(objectClass=user)(sAMAccountName=" + accountName + "))";
             SearchControls searchControls = new SearchControls();
             searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            NamingEnumeration<SearchResult> results = ctx.search(ldapSearchBase, searchFilter, searchControls);
+            NamingEnumeration<SearchResult> results = ctx.search("DC=corp,DC=soti,DC=net", searchFilter, searchControls);
 
             SearchResult searchResult;
             if (results.hasMoreElements()) {

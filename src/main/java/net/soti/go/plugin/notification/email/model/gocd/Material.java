@@ -15,14 +15,6 @@ import com.google.gson.annotations.SerializedName;
  * Date: 2018-03-18
  */
 public class Material {
-    @Expose
-    @SerializedName("type")
-    public MaterialType type;
-
-    @Expose
-    @SerializedName("description")
-    public String description;
-
     private static final String SOTITFS = "SOTITFS";
     private static final String PACKAGE = "Package";
     private static final String REPOSITORY = "Repository";
@@ -32,6 +24,31 @@ public class Material {
     private static final String SOURCE_CONTROL_ENTRY_SPLITTER = ", ";
     private static final String ITEM_SPLITTER = ": ";
     private static final String EQUAL_SPLITTER = "=";
+
+    @Expose
+    @SerializedName("type")
+    private MaterialType type;
+
+    @Expose
+    @SerializedName("description")
+    private String description;
+
+    public Material() {
+
+    }
+
+    public Material(MaterialType type, String description) {
+        this.type = type;
+        this.description = description;
+    }
+
+    public MaterialType getType() {
+        return type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 
     public boolean isPipeline() {
         return MaterialType.Pipeline.equals(type);

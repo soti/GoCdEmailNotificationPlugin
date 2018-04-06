@@ -9,7 +9,7 @@ import static org.junit.Assert.assertThat;
  * User: wsim
  * Date: 2018-04-03
  */
-public class SimplePipelineHistoryTest {
+public class PluginPipelineHistoryTest {
     private static final String testData = " " +
             "{ " +
             "\"pagination\": " +

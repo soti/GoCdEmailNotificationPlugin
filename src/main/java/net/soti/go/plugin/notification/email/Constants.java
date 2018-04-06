@@ -16,9 +16,9 @@
 
 package net.soti.go.plugin.notification.email;
 
-import com.thoughtworks.go.plugin.api.GoPluginIdentifier;
-
 import java.util.Collections;
+
+import com.thoughtworks.go.plugin.api.GoPluginIdentifier;
 
 public interface Constants {
     // The type of this extension

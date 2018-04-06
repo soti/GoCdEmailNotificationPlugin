@@ -8,11 +8,11 @@ import com.google.gson.annotations.SerializedName;
  */
 public class TfsConfig {
     @SerializedName("domain")
-    public String domain;
+    private String domain;
 
     @SerializedName("url")
-    public String url;
+    private String url;
 
     @SerializedName("project-path")
-    public String projectPath;
+    private String projectPath;
 }
