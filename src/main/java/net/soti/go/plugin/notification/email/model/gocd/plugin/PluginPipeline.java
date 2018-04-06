@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import net.soti.go.plugin.notification.email.model.ChangedMaterial;
 import net.soti.go.plugin.notification.email.model.MaterialType;
@@ -56,7 +57,7 @@ public class PluginPipeline {
                 resultType = ExecutionResultType.Passed;
                 if (counter > 1) {
                     Pipeline lastRunPipeline = client.getLastRun(name, counter, stage.getName());
-                    if(lastRunPipeline != null && !StageResultType.Passed.equals(lastRunPipeline.getStageResult(stage.getName()))){
+                    if (lastRunPipeline != null && !StageResultType.Passed.equals(lastRunPipeline.getStageResult(stage.getName()))) {
                         resultType = ExecutionResultType.Fixed;
                     }
                 }
@@ -66,7 +67,7 @@ public class PluginPipeline {
                 resultType = ExecutionResultType.Broken;
                 if (counter > 1) {
                     Pipeline lastRunPipeline = client.getLastRun(name, counter, stage.getName());
-                    if(lastRunPipeline != null && !StageResultType.Passed.equals(lastRunPipeline.getStageResult(stage.getName()))){
+                    if (lastRunPipeline != null && !StageResultType.Passed.equals(lastRunPipeline.getStageResult(stage.getName()))) {
                         resultType = ExecutionResultType.Failing;
                     }
                 }
@@ -78,7 +79,7 @@ public class PluginPipeline {
                 throw new IOException("Unexpected stage status: " + currentStageResult);
         }
 
-        LOG.info(String.format("'%s/%d/%s/%d' is %s", name, counter, stage.getName(), stage.getCounter(), resultType.name()));
+        LOG.debug(String.format("'%s/%d/%s/%d' is %s", name, counter, stage.getName(), stage.getCounter(), resultType.name()));
 
         if (ExecutionResultType.Passed.equals(resultType) || ExecutionResultType.Building.equals(resultType)) {
             isReady = true;
@@ -91,12 +92,15 @@ public class PluginPipeline {
         final List<Pipeline> pipelines = client.getPipelineHistorySinceLastSuccess(name, endCounter, stage.getName());
         Pipeline startPipeline = pipelines.get(pipelines.size() - 1);
         final boolean everRed = !startPipeline.getStageResult(stage.getName()).equals(StageResultType.Passed);
-        LOG.info(String.format("'%s/%d/%s' read histories(%d) from counter %d to %d (EverRed:%s).",
+        LOG.debug(String.format("'%s/%d/%s' read histories(%d) from counter %d to %d (EverRed:%s).",
                 name, counter, stage.getName(), pipelines.size(), startPipeline.getCounter(), endCounter, everRed));
 
-        if (everRed) {
-            changedMaterials.addAll(getChangesOfList(pipelines, everRed, manager));
-        }
+        long limit = pipelines.size() - 1;
+        final List<Pipeline> readChangesList = everRed ? pipelines : pipelines.stream().limit(limit).collect(Collectors.toList());
+        changedMaterials.addAll(getChangesOfList(readChangesList, everRed, manager));
+
+        LOG.debug(String.format("'%s/%d/%s' added all changes in the history (%d): %d", name, counter, stage.getName(), pipelines.size(),
+                changedMaterials.size()));
 
         final List<PipelineRevision> endUpstreams = pipelines.get(0).getRecursiveUpstreamPipelines(client);
         final List<PipelineRevision> startUpstreams = startPipeline.getRecursiveUpstreamPipelines(client);
@@ -131,7 +135,11 @@ public class PluginPipeline {
             }
             firstCounter += 1;
 
+            LOG.debug(String.format("Getting '%s' from counter %d to %d.", entry.getKey(), firstCounter, lastCounter));
             List<Pipeline> upstreamHistory = client.getPipeineHistory(entry.getKey(), firstCounter, lastCounter);
+
+            LOG.debug(String.format("Registering all changes of '%s' from counter %d to %d (%d).", entry.getKey(), firstCounter,
+                    lastCounter, upstreamHistory.size()));
             changedMaterials.addAll(getChangesOfList(upstreamHistory, everRed, manager));
         }
 
