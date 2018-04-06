@@ -101,15 +101,20 @@ public class GoCdClient {
                     .forEach(pipeline -> history.add(pipeline));
 
             if (history.size() == 0) {
+                Pipeline last = pipelineHistory[pipelineHistory.length-1];
+                if(last.getCounter() < endCounter)
+                {
+                    offset = pipelineHistory[0].getCounter() - endCounter;
+                }
                 continue;
             }
-            if (history.get(history.size() - 1).getCounter() == startCounter ||
+            if (history.get(history.size() - 1).getCounter() <= startCounter ||
                     pipelineHistory.length == 0 ||
                     pipelineHistory[pipelineHistory.length - 1].getCounter() == 1) {
                 break;
             }
-
             offset += pipelineHistory.length;
+
         } while (true);
 
         return history;
