@@ -124,12 +124,13 @@ public class PluginPipeline {
 
         for (Map.Entry<String, Integer> entry : endUpstreamMap.entrySet()) {
             int firstCounter = everRed ? 1 : startUpstreamMap.getOrDefault(entry.getKey(), 1);
+            int lastCounter = entry.getValue();
             if (!everRed && entry.getValue() == firstCounter) {
                 continue;
             }
             firstCounter += 1;
 
-            List<Pipeline> upstreamHistory = client.getPipelinesBetween(entry.getKey(), firstCounter, endCounter);
+            List<Pipeline> upstreamHistory = client.getPipelinesBetween(entry.getKey(), firstCounter, lastCounter);
             changedMaterials.addAll(getChangesOfList(upstreamHistory, everRed, manager));
         }
 
