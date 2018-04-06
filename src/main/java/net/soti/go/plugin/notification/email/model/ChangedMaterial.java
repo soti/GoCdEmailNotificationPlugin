@@ -20,6 +20,7 @@ public class ChangedMaterial {
     private final String name;
     private final String revision;
     private final String comment;
+    private final long time;
     private final String pipelineName;
     private final int pipelineCounter;
     private final String stageName;
@@ -33,6 +34,7 @@ public class ChangedMaterial {
             String name,
             String revision,
             String comment,
+            long time,
             LdapManager manager,
             String pipelineName,
             int pipelineCounter,
@@ -43,6 +45,7 @@ public class ChangedMaterial {
         this.name = name;
         this.revision = revision;
         this.comment = comment;
+        this.time = time;
         this.pipelineName = pipelineName;
         this.pipelineCounter = pipelineCounter;
         this.stageName = stageName;
@@ -87,7 +90,7 @@ public class ChangedMaterial {
         return materialType;
     }
 
-    public String getRevision(){
+    public String getRevision() {
         return revision;
     }
 
@@ -95,7 +98,11 @@ public class ChangedMaterial {
         return comment;
     }
 
-    public String getPipelineName(){
+    public long getTime() {
+        return time;
+    }
+
+    public String getPipelineName() {
         return pipelineName;
     }
 
@@ -103,7 +110,9 @@ public class ChangedMaterial {
         return pipelineCounter;
     }
 
-    public String getStageName() {return stageName;}
+    public String getStageName() {
+        return stageName;
+    }
 
     public int getStageCounter() {
         return stageCounter;

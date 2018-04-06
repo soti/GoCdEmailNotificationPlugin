@@ -17,6 +17,7 @@
 package net.soti.go.plugin.notification.email.executors;
 
 import net.soti.go.plugin.notification.email.requests.ValidatePluginSettings;
+
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;

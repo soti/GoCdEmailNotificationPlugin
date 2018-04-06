@@ -18,15 +18,6 @@ public class BuildCause {
     @SerializedName("material_revisions")
     private List<MaterialRevision> materialRevisions;
 
-    public BuildCause() {
-
-    }
-
-    public BuildCause(String approver, List<MaterialRevision> materialRevisions){
-        this.approver = approver;
-        this.materialRevisions = materialRevisions;
-    }
-
     public List<MaterialRevision> getMaterialRevisions() {
         return materialRevisions;
     }

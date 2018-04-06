@@ -33,15 +33,6 @@ public class Material {
     @SerializedName("description")
     private String description;
 
-    public Material() {
-
-    }
-
-    public Material(MaterialType type, String description) {
-        this.type = type;
-        this.description = description;
-    }
-
     public MaterialType getType() {
         return type;
     }

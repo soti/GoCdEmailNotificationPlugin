@@ -14,15 +14,19 @@ public class Modification {
 
     @Expose
     @SerializedName("user_name")
-    public String userName;
+    private String userName;
 
     @Expose
     @SerializedName("comment")
-    public String comment;
+    private String comment;
 
     @Expose
     @SerializedName("email_address")
-    public String email;
+    private String email;
+
+    @Expose
+    @SerializedName("modified_time")
+    private long time;
 
     public String getRevision() {
         return revision;
@@ -38,5 +42,9 @@ public class Modification {
 
     public String getEmail() {
         return email;
+    }
+
+    public long getTime() {
+        return time;
     }
 }

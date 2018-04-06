@@ -16,16 +16,18 @@
 
 package net.soti.go.plugin.notification.email.executors;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import net.soti.go.plugin.notification.email.utils.Util;
+
 import com.google.gson.Gson;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 public class GetViewRequestExecutorTest {

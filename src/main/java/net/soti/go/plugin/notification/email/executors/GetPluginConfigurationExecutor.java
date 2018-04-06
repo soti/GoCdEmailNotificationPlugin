@@ -16,22 +16,23 @@
 
 package net.soti.go.plugin.notification.email.executors;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import net.soti.go.plugin.notification.email.RequestExecutor;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /*
  * TODO: add any additional configuration fields here.
  */
 public class GetPluginConfigurationExecutor implements RequestExecutor {
 
+    static final Map<String, Field> FIELDS = new LinkedHashMap<>();
     private static final Gson GSON = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-
     private static final Field GO_SERVER_URL = new NonBlankField("go_server_url", "Go Server URL", null, true, false, "0");
     private static final Field API_SERVER_URL = new NonBlankField("api_url", "API URL", null, true, false, "1");
     private static final Field API_USER = new NonBlankField("api_user", "API User", null, true, false, "2");
@@ -41,8 +42,6 @@ public class GetPluginConfigurationExecutor implements RequestExecutor {
     private static final Field LDAP_KEY = new NonBlankField("ldap_key", "LDAP Key", null, true, false, "6");
     private static final Field SMTP_URL = new NonBlankField("smtp_url", "SMTP URL", null, true, false, "7");
     private static final Field DEFAILT_SENDER = new NonBlankField("mail_sender", "Mail Sender", null, true, false, "8");
-
-    static final Map<String, Field> FIELDS = new LinkedHashMap<>();
 
     static {
         FIELDS.put(GO_SERVER_URL.key(), GO_SERVER_URL);

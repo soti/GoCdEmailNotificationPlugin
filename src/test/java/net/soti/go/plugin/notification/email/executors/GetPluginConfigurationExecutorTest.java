@@ -16,13 +16,13 @@
 
 package net.soti.go.plugin.notification.email.executors;
 
+import java.util.HashMap;
+
 import com.google.gson.Gson;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
-
-import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;

@@ -1,6 +1,7 @@
 # Email Notification plugin
 
-GoCD Email Notification that send a mail to developers who commited new changes since last successful build
+GoCD Email Notification that send a mail to developers who commited new changes since last successful build (including
+newly commited changes on all upstream pipelines).
 
 ## Building the code base
 

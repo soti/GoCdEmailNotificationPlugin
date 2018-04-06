@@ -93,7 +93,7 @@ public class StageStatusRequestExecutor implements RequestExecutor {
                 pluginRequest.getPluginSettings().getLdapUser(),
                 pluginRequest.getPluginSettings().getLdapKey());
 
-        request.pipeline.initialize(client, manager);
+        int sinceCounter = request.pipeline.initialize(client, manager);
 
         ExecutionResultType executionResult = request.pipeline.getExecutionResultType();
         if (ExecutionResultType.Passed.equals(executionResult) || ExecutionResultType.Building.equals(executionResult)) {
@@ -105,6 +105,13 @@ public class StageStatusRequestExecutor implements RequestExecutor {
             LOG.info("No new changes since last success");
             return;
         }
+        LOG.info(String.format("[%s] %s/%d/%s/%d has total %d changes.",
+                request.pipeline.getExecutionResultType().name(),
+                pipelineName,
+                pipelineCounter,
+                stageName,
+                stageCounter,
+                changes.size()));
 
         HashSet<String> emails = new HashSet<>();
         changes.stream().map(ChangedMaterial::getEmail)
@@ -167,16 +174,30 @@ public class StageStatusRequestExecutor implements RequestExecutor {
                 stageName,
                 stageCounter);
 
-        String mailBody = String.format(bodyTemplate, pipelineName, stageName, statusMessage, gocdLink, tableBody);
-        String subject = String.format("[%s] GoCD pipeline %s (stage %s) %s", executionResult.name(), pipelineName, stageName, statusMessage);
+        String subject = String.format("[%s] pipeline '%s' (stage '%s') %s",
+                executionResult.name(), pipelineName, stageName, statusMessage);
+        String sinceLink = String.format("%s/go/pipelines/%s/%d/%s/%d",
+                pluginRequest.getPluginSettings().getGoServerUrl(),
+                pipelineName,
+                sinceCounter,
+                stageName,
+                stageCounter);
+        String sinceMessage = ExecutionResultType.Fixed.equals(executionResult) ?
+                "while it was failing" :
+                sinceCounter > 0 ?
+                        String.format("since last successful build <a href=\"%s\">(%s/%d)</a>", sinceLink, pipelineName, sinceCounter) :
+                        String.format("from the beginning of the pipeline history (never passed)");
+
+        String mailBody = String.format(bodyTemplate,
+                pipelineName, pipelineCounter, stageName, stageCounter, statusMessage, gocdLink, sinceMessage, tableBody);
         String sender = pluginRequest.getPluginSettings().getSender();
 
         List<String> emailList = new ArrayList<>();
         emailList.addAll(emails);
 
+        LOG.debug(String.format("Sends mail to %d recepients.", emails.size()));
         SmtpMailSender mailSender = new SmtpMailSender(pluginRequest.getPluginSettings().getMailServerUrl(), 25, false, sender);
         mailSender.sendEmail(subject, mailBody, emailList, null, null);
-
     }
 
     private boolean isWhitelisted(String pipelineName, String stageName) {
@@ -201,7 +222,7 @@ public class StageStatusRequestExecutor implements RequestExecutor {
         sb.append("<td>");
         sb.append(user);
         if (email != null && email.length() > 0) {
-            sb.append(String.format(" &lt;%s&gt;", email));
+            sb.append(String.format("<br/>&lt;%s&gt;", email));
         }
         sb.append("</td>");
 
@@ -213,16 +234,15 @@ public class StageStatusRequestExecutor implements RequestExecutor {
                 change.getStageName(),
                 change.getStageCounter());
 
-        sb.append(String.format("<a href=\"%s\">%s<br/>[%d]</a>", linkUrl, change.getPipelineName(), change.getPipelineCounter()));
+        sb.append(String.format("<a href=\"%s\">%s [%d]</a>", linkUrl, change.getPipelineName(), change.getPipelineCounter()));
         sb.append("</td>");
 
         sb.append("<td>");
-        sb.append(String.format("%s: <a href=\"%s\">%s<br/>At %s</a>", type.name(), link, revision, MaterialType.Package.equals(type) ? link
-                : repo));
+        sb.append(String.format("%s: <a href=\"%s\">%s</a>", type.name(), link, revision));
         sb.append("</td>");
 
-        sb.append("<td>");
-        sb.append(comment);
+        sb.append("<td style=\"text-align: left;\">");
+        sb.append(String.format("[At %s]<br/><br/>%s", MaterialType.Package.equals(type) ? link : repo, comment));
         sb.append("</td>");
 
         sb.append("</tr>");

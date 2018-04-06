@@ -8,7 +8,6 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
-import java.util.HashMap;
 import java.util.Hashtable;
 
 import net.soti.go.plugin.notification.email.EmailNotificationPlugin;

@@ -49,6 +49,7 @@ public class MaterialRevision {
                         material.getName(),
                         mod.getRevision(),
                         mod.getComment(),
+                        mod.getTime(),
                         manager,
                         pipelineName,
                         pipelineCounter,

@@ -16,14 +16,15 @@
 
 package net.soti.go.plugin.notification.email.executors;
 
+import java.util.ArrayList;
+import java.util.Map;
+
 import net.soti.go.plugin.notification.email.RequestExecutor;
 import net.soti.go.plugin.notification.email.requests.ValidatePluginSettings;
+
 import com.google.gson.Gson;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
-import java.util.ArrayList;
-import java.util.Map;
 
 public class ValidateConfigurationExecutor implements RequestExecutor {
     private static final Gson GSON = new Gson();

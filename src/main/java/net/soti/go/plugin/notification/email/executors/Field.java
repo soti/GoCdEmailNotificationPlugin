@@ -16,12 +16,12 @@
 
 package net.soti.go.plugin.notification.email.executors;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class Field {
     protected final String key;
@@ -65,12 +65,12 @@ public class Field {
         return result;
     }
 
-    protected String doValidate(String input) {
-        return null;
-    }
-
     public String key() {
         return key;
+    }
+
+    protected String doValidate(String input) {
+        return null;
     }
 
 

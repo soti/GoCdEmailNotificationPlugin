@@ -35,10 +35,6 @@ public enum Request {
         this.requestName = requestName;
     }
 
-    public String requestName() {
-        return requestName;
-    }
-
     public static Request fromString(String requestName) {
         if (requestName != null) {
             for (Request request : Request.values()) {
@@ -49,6 +45,10 @@ public enum Request {
         }
 
         return null;
+    }
+
+    public String requestName() {
+        return requestName;
     }
 
     private static class Constants {

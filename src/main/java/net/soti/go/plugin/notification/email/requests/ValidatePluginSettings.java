@@ -16,14 +16,15 @@
 
 package net.soti.go.plugin.notification.email.requests;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import net.soti.go.plugin.notification.email.RequestExecutor;
 import net.soti.go.plugin.notification.email.executors.ValidateConfigurationExecutor;
+
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ValidatePluginSettings extends HashMap<String, String> {
     private static final Gson GSON = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();

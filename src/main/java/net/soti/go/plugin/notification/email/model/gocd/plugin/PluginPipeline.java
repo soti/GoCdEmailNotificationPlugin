@@ -2,10 +2,7 @@ package net.soti.go.plugin.notification.email.model.gocd.plugin;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import net.soti.go.plugin.notification.email.model.ChangedMaterial;
@@ -48,7 +45,7 @@ public class PluginPipeline {
         return name + "/" + counter + "/" + stage.getName() + "/" + stage.getResult();
     }
 
-    public void initialize(final GoCdClient client, final LdapManager manager) throws IOException {
+    public int initialize(final GoCdClient client, final LdapManager manager) throws IOException {
         StageResultType currentStageResult = stage.getResult();
         LOG.info(String.format("Initialize %s/%d/%s/%d [%s]", name, counter, stage.getName(), stage.getCounter(), currentStageResult.name()));
 
@@ -83,7 +80,7 @@ public class PluginPipeline {
 
         if (ExecutionResultType.Passed.equals(resultType) || ExecutionResultType.Building.equals(resultType)) {
             isReady = true;
-            return;
+            return -1;
         }
 
         changedMaterials.clear();
@@ -143,7 +140,10 @@ public class PluginPipeline {
             changedMaterials.addAll(getChangesOfList(upstreamHistory, everRed, manager));
         }
 
+        changedMaterials.sort(Comparator.comparing(ChangedMaterial::getTime));
         isReady = true;
+
+        return everRed ? 1 : startPipeline.getCounter();
     }
 
     public List<ChangedMaterial> getAllChangedMaterials() {

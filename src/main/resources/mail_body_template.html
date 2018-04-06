@@ -1,8 +1,26 @@
 <html>
+<head>
+    <style>
+    table {
+        border-collapse: collapse;
+        width: 100%%;
+    }
+    th {
+        background-color: #FAFAFA;
+    }
+    table, th, td {
+        border: 1px solid lightgray;
+        padding: 0.5em;
+        vertical-align: top;
+        text-align: center;
+    }
+
+    </style>
+</head>
 <body>
-<h3>GoCD '%s' pipeline '%s' stage %s.</h3>
+<h4>GoCD pipeline '%s/%d/%s/%d' %s.</h4>
 <h5>See details: <a href="%s">GoCD pipeline view link</a></h5>
-<h4>Changes since last success.</h4>
+<h3>Changes %s.</h3>
 <table>
     <tr>
         <th>User</th>

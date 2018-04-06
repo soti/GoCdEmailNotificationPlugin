@@ -32,11 +32,11 @@ public class PluginStage {
     public String approvedBy;
     */
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
-    public int getCounter(){
+    public int getCounter() {
         return counter;
     }
 
