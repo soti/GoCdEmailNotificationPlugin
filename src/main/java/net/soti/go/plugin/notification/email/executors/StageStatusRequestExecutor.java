@@ -121,16 +121,11 @@ public class StageStatusRequestExecutor implements RequestExecutor {
         String bodyTemplate = Util.readResource("/mail_body_template.html");
 
         StringBuilder sb = new StringBuilder();
-        final HashMap<String, ChangedMaterial> packageChanges = new HashMap<>();
         final HashSet<String> usedRevisions = new HashSet<>();
         final List<String> tableBodies = new ArrayList<>();
 
         for (int i = changes.size() - 1; i >= 0; i--) {
             ChangedMaterial change = changes.get(i);
-            if (MaterialType.Package.equals(change.getType())) {
-                packageChanges.put(change.getName(), change);
-                continue;
-            }
             String key = change.getType().name() + change.getRevision() + change.getName() + change.getPipelineName();
             if (usedRevisions.contains(key)) {
                 continue;
@@ -146,9 +141,6 @@ public class StageStatusRequestExecutor implements RequestExecutor {
 
         for (String body : tableBodies) {
             sb.append(body);
-        }
-        for (ChangedMaterial change : packageChanges.values()) {
-            sb.append(getTableBodyString(change));
         }
 
         String tableBody = sb.toString();
