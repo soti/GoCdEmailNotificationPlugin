@@ -42,6 +42,8 @@ public class GetPluginConfigurationExecutor implements RequestExecutor {
     private static final Field LDAP_KEY = new NonBlankField("ldap_key", "LDAP Key", null, true, false, "6");
     private static final Field SMTP_URL = new NonBlankField("smtp_url", "SMTP URL", null, true, false, "7");
     private static final Field DEFAILT_SENDER = new NonBlankField("mail_sender", "Mail Sender", null, true, false, "8");
+    private static final Field NOTIFICATION_WHITELIST = new PipelineStageNameField("whitelist", "Notification excluded pipelines/stages",
+            null, true, false, "9");
 
     static {
         FIELDS.put(GO_SERVER_URL.key(), GO_SERVER_URL);
@@ -53,6 +55,7 @@ public class GetPluginConfigurationExecutor implements RequestExecutor {
         FIELDS.put(LDAP_KEY.key(), LDAP_KEY);
         FIELDS.put(SMTP_URL.key(), SMTP_URL);
         FIELDS.put(DEFAILT_SENDER.key(), DEFAILT_SENDER);
+        FIELDS.put(NOTIFICATION_WHITELIST.key(), NOTIFICATION_WHITELIST);
     }
 
     public GoPluginApiResponse execute() {

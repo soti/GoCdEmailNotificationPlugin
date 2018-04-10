@@ -98,6 +98,12 @@ public class GetPluginConfigurationExecutorTest {
                 "    \"required\": true,\n" +
                 "    \"secure\": false,\n" +
                 "    \"display-order\": \"8\"\n" +
+                "  },\n" +
+                "  \"whitelist\": {\n" +
+                "    \"display-name\": \"Notification excluded pipelines/stages\",\n" +
+                "    \"required\": true,\n" +
+                "    \"secure\": false,\n" +
+                "    \"display-order\": \"9\"\n" +
                 "  }\n" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, response.responseBody(), true);

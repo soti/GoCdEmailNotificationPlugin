@@ -23,6 +23,7 @@ import net.soti.go.plugin.notification.email.RequestExecutor;
 import net.soti.go.plugin.notification.email.ServerRequestFailedException;
 import net.soti.go.plugin.notification.email.model.ChangedMaterial;
 import net.soti.go.plugin.notification.email.model.MaterialType;
+import net.soti.go.plugin.notification.email.model.Whitelist;
 import net.soti.go.plugin.notification.email.model.gocd.ExecutionResultType;
 import net.soti.go.plugin.notification.email.model.gocd.StageResultType;
 import net.soti.go.plugin.notification.email.requests.StageStatusRequest;
@@ -66,15 +67,16 @@ public class StageStatusRequestExecutor implements RequestExecutor {
     }
 
     protected void sendNotification() throws Exception {
-        if (StageResultType.Unknown.equals(request.pipeline.getStageResult())) {
-            return;
-        }
 
-        String pipelineName = request.pipeline.getName();
-        int pipelineCounter = request.pipeline.getCounter();
-        String stageName = request.pipeline.getStage().getName();
-        int stageCounter = request.pipeline.getStage().getCounter();
-        if (isWhitelisted(pipelineName, stageName)) {
+
+        final String pipelineName = request.pipeline.getName();
+        final int pipelineCounter = request.pipeline.getCounter();
+        final String stageName = request.pipeline.getStage().getName();
+        final int stageCounter = request.pipeline.getStage().getCounter();
+        final List<Whitelist> whitelists = pluginRequest.getPluginSettings().getWhitelists();
+        whitelists.forEach(item -> LOG.info("Whitelist: " + item.toString()));
+
+        if (whitelists.stream().anyMatch(whitelist -> whitelist.isWhitelisted(pipelineName, stageName))) {
             LOG.info(String.format("Ignores whitelist: [%s] %s/%d/%s/%d",
                     request.pipeline.getStageResult().name(),
                     pipelineName,
@@ -82,9 +84,18 @@ public class StageStatusRequestExecutor implements RequestExecutor {
                     stageName,
                     stageCounter));
             return;
+        } else{
+            LOG.info(String.format("Send notification: [%s] %s/%d/%s/%d",
+                    request.pipeline.getStageResult().name(),
+                    pipelineName,
+                    pipelineCounter,
+                    stageName,
+                    stageCounter));
         }
 
-        GoCdClient client = new GoCdClient(
+        return;
+
+        /*GoCdClient client = new GoCdClient(
                 pluginRequest.getPluginSettings().getApiUrl(),
                 pluginRequest.getPluginSettings().getApiUser(),
                 pluginRequest.getPluginSettings().getApiKey());
@@ -186,14 +197,23 @@ public class StageStatusRequestExecutor implements RequestExecutor {
 
         List<String> emailList = new ArrayList<>();
         emailList.addAll(emails);
-
         LOG.debug(String.format("Sends mail to %d recepients.", emails.size()));
         SmtpMailSender mailSender = new SmtpMailSender(pluginRequest.getPluginSettings().getMailServerUrl(), 25, false, sender);
-        mailSender.sendEmail(subject, mailBody, emailList, null, null);
+        mailSender.sendEmail(subject, mailBody, emailList, null, null);*/
     }
 
     private boolean isWhitelisted(String pipelineName, String stageName) {
-        return false;
+        return (pipelineName.toLowerCase().contains("_test") || pipelineName.contains("Poc"))
+                || (pipelineName.startsWith("Database_") && stageName.equals("BackwardCompatibilityTest"))
+                || (pipelineName.startsWith("Acceptance_FeatureToggle_v"))
+                || (pipelineName.startsWith("ToggleScanner_v")
+                || (pipelineName.startsWith("UAT_v"))
+                || (pipelineName.startsWith("Acceptance_Aws"))
+                || (pipelineName.startsWith("UpgradeTests_v"))
+                || (pipelineName.equals("PackageVersionConflictTests"))
+                || (pipelineName.startsWith("Coverage_v"))
+                || (pipelineName.equals("Acceptance_v13"))
+        );
     }
 
     private String getTableBodyString(ChangedMaterial change) throws ServerRequestFailedException {

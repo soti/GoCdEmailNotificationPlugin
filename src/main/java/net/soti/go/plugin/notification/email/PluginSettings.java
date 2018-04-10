@@ -16,6 +16,13 @@
 
 package net.soti.go.plugin.notification.email;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import net.soti.go.plugin.notification.email.model.Whitelist;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
@@ -63,6 +70,12 @@ public class PluginSettings {
     @SerializedName("mail_sender")
     private String sender;
 
+    @Expose
+    @SerializedName("whitelist")
+    private String whitelist;
+
+    private List<Whitelist> whitelists;
+
     public String getApiUser() {
         return apiUser;
     }
@@ -97,6 +110,17 @@ public class PluginSettings {
 
     public String getSender() {
         return sender;
+    }
+
+    public List<Whitelist> getWhitelists() {
+        if (whitelists == null) {
+            whitelists = Arrays.stream(whitelist.split(","))
+                    .map(Whitelist::getWhitelistItem)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        }
+
+        return whitelists;
     }
 
     static PluginSettings fromJSON(String json) {
