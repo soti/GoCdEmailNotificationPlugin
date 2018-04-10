@@ -67,7 +67,9 @@ public class StageStatusRequestExecutor implements RequestExecutor {
     }
 
     protected void sendNotification() throws Exception {
-
+        if (StageResultType.Unknown.equals(request.pipeline.getStageResult())) {
+            return;
+        }
 
         final String pipelineName = request.pipeline.getName();
         final int pipelineCounter = request.pipeline.getCounter();
@@ -84,18 +86,9 @@ public class StageStatusRequestExecutor implements RequestExecutor {
                     stageName,
                     stageCounter));
             return;
-        } else{
-            LOG.info(String.format("Send notification: [%s] %s/%d/%s/%d",
-                    request.pipeline.getStageResult().name(),
-                    pipelineName,
-                    pipelineCounter,
-                    stageName,
-                    stageCounter));
         }
 
-        return;
-
-        /*GoCdClient client = new GoCdClient(
+        GoCdClient client = new GoCdClient(
                 pluginRequest.getPluginSettings().getApiUrl(),
                 pluginRequest.getPluginSettings().getApiUser(),
                 pluginRequest.getPluginSettings().getApiKey());
@@ -199,21 +192,7 @@ public class StageStatusRequestExecutor implements RequestExecutor {
         emailList.addAll(emails);
         LOG.debug(String.format("Sends mail to %d recepients.", emails.size()));
         SmtpMailSender mailSender = new SmtpMailSender(pluginRequest.getPluginSettings().getMailServerUrl(), 25, false, sender);
-        mailSender.sendEmail(subject, mailBody, emailList, null, null);*/
-    }
-
-    private boolean isWhitelisted(String pipelineName, String stageName) {
-        return (pipelineName.toLowerCase().contains("_test") || pipelineName.contains("Poc"))
-                || (pipelineName.startsWith("Database_") && stageName.equals("BackwardCompatibilityTest"))
-                || (pipelineName.startsWith("Acceptance_FeatureToggle_v"))
-                || (pipelineName.startsWith("ToggleScanner_v")
-                || (pipelineName.startsWith("UAT_v"))
-                || (pipelineName.startsWith("Acceptance_Aws"))
-                || (pipelineName.startsWith("UpgradeTests_v"))
-                || (pipelineName.equals("PackageVersionConflictTests"))
-                || (pipelineName.startsWith("Coverage_v"))
-                || (pipelineName.equals("Acceptance_v13"))
-        );
+        mailSender.sendEmail(subject, mailBody, emailList, null, null);
     }
 
     private String getTableBodyString(ChangedMaterial change) throws ServerRequestFailedException {
